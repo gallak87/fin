@@ -11,8 +11,8 @@ import { CompareModal } from './components/CompareModal'
 
 function StepChip({ n, label }: { n: number; label: string }) {
   return (
-    <span className="inline-flex items-center gap-1 text-[10px] text-gray-600 bg-gray-900 border border-gray-800 rounded-full px-2 py-0.5 select-none">
-      <span className="text-gray-700">{n}</span>
+    <span className="inline-flex items-center gap-1.5 text-[11px] text-blue-300 bg-blue-950 border border-blue-800/50 rounded-full px-2.5 py-0.5 select-none font-medium">
+      <span className="text-blue-500 font-bold">{n}</span>
       <span>{label}</span>
     </span>
   )
