@@ -196,12 +196,27 @@ export function InputPanel() {
 
   return (
     <div className="space-y-3 text-sm">
-      <div className="flex justify-end">
+      {/* Fork form — top, inline with editing context */}
+      <div className="flex gap-2 items-center">
+        <input
+          type="text"
+          placeholder="fork as new…"
+          value={scenarioName}
+          onChange={(e) => setScenarioName(e.target.value)}
+          onKeyDown={(e) => e.key === 'Enter' && handleSave()}
+          className="flex-1 text-xs bg-gray-900 border border-gray-700 rounded px-2 py-1.5 text-white placeholder-gray-600 focus:border-amber-600 focus:outline-none"
+        />
+        <button
+          onClick={handleSave}
+          className="text-xs bg-amber-600 hover:bg-amber-500 text-white px-3 py-1.5 rounded whitespace-nowrap"
+        >
+          Fork
+        </button>
         <button
           onClick={resetInputs}
-          className="text-xs text-gray-500 hover:text-gray-300 border border-gray-700 hover:border-gray-500 rounded px-2 py-1 transition-colors"
+          className="text-xs text-gray-500 hover:text-gray-300 border border-gray-700 hover:border-gray-500 rounded px-2 py-1.5 transition-colors whitespace-nowrap"
         >
-          Reset to defaults
+          Reset
         </button>
       </div>
       <SectionHeader label="Purchase" />
@@ -316,26 +331,6 @@ export function InputPanel() {
         </>
       )}
 
-      {/* Fork as new scenario — bottom of sidebar */}
-      <div className="pt-3 mt-1 border-t border-gray-800 space-y-2">
-        <div className="text-xs text-gray-600">Fork as new scenario</div>
-        <div className="flex gap-2">
-          <input
-            type="text"
-            placeholder="Scenario name…"
-            value={scenarioName}
-            onChange={(e) => setScenarioName(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && handleSave()}
-            className="flex-1 text-xs bg-gray-800 border border-gray-700 rounded px-2 py-1.5 text-white placeholder-gray-600"
-          />
-          <button
-            onClick={handleSave}
-            className="text-xs bg-blue-600 hover:bg-blue-500 text-white px-3 py-1.5 rounded whitespace-nowrap"
-          >
-            Save
-          </button>
-        </div>
-      </div>
     </div>
   )
 }
