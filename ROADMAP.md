@@ -14,6 +14,7 @@ A personal home-purchase planning tool: configure named scenarios with adjustabl
 - Phase 6: GitHub Pages deploy
 
 ## Future
+- **Auto-tune ("make it green")**: button that searches the input space to find the minimum adjustments needed to bring DTI, cash reserve, and discretionary budget all into green territory — surfaces e.g. "raise down payment by $80k or lower house price by $120k"
 - **Excel export**: one-click `.xlsx` with scenario comparison table and pivot chart (`exceljs`)
 - **Sensitivity analysis**: auto-generate a grid of scenarios varying one variable at a time
 - **Rental income modeling**: model TN house / condo generating rent while held
