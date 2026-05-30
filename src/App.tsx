@@ -9,15 +9,12 @@ import { ProjectionChart } from './components/ProjectionChart'
 import { ScenarioList } from './components/ScenarioList'
 import { CompareModal } from './components/CompareModal'
 
-function StepLabel({ n, title, hint }: { n: number; title: string; hint: string }) {
+function StepChip({ n, label }: { n: number; label: string }) {
   return (
-    <div className="flex items-center gap-2.5">
-      <span className="w-5 h-5 rounded-full bg-gray-800 border border-gray-700 text-gray-500 text-xs flex items-center justify-center font-semibold shrink-0">
-        {n}
-      </span>
-      <span className="text-xs font-semibold text-gray-400">{title}</span>
-      <span className="text-xs text-gray-600">{hint}</span>
-    </div>
+    <span className="inline-flex items-center gap-1 text-[10px] text-gray-600 bg-gray-900 border border-gray-800 rounded-full px-2 py-0.5 select-none">
+      <span className="text-gray-700">{n}</span>
+      <span>{label}</span>
+    </span>
   )
 }
 
@@ -63,39 +60,37 @@ export default function App() {
             bg-gray-950 border-b border-gray-800
           `}
         >
-          <div className="px-4 pt-4 pb-2">
-            <StepLabel n={1} title="Configure a scenario" hint="set your assumptions" />
+          <div className="px-4 pt-3 pb-1">
+            <StepChip n={1} label="configure inputs" />
           </div>
           <div className="px-4 pb-4">
             <InputPanel />
           </div>
         </aside>
 
-        {/* Main — Steps 2 & 3 */}
-        <main className="flex-1 overflow-y-auto">
+        {/* Main */}
+        <main className="flex-1 overflow-y-auto p-3 space-y-2">
 
           {/* Step 2 — Save scenarios */}
-          <div className="p-4 pb-0 space-y-3">
-            <StepLabel n={2} title="Save as a scenario" hint="repeat for each situation you want to compare" />
+          <div>
+            <div className="mb-1"><StepChip n={2} label="save as a scenario · repeat for each situation" /></div>
             <ScenarioList />
           </div>
 
-          {/* Connector */}
-          <div className="flex items-center gap-3 px-4 py-3">
-            <div className="flex-1 border-t border-dashed border-gray-800" />
-          </div>
-
           {/* Step 3 — Compare */}
-          <div className="px-4 pb-4 space-y-3">
-            <StepLabel n={3} title="Compare" hint="check scenarios above to plot — hover for details" />
+          <div>
+            <div className="mb-1"><StepChip n={3} label="compare · check scenarios above to plot" /></div>
             <ProjectionChart projections={projections} />
           </div>
 
-          {/* Detail metrics */}
-          <div className="px-4 pb-4 space-y-3 border-t border-gray-800 pt-4">
-            <MetricsCards metrics={metrics} inputs={inputs} />
-            <LifestyleGoalBar metrics={metrics} inputs={inputs} />
-            <CashFlowBreakdown metrics={metrics} inputs={inputs} />
+          {/* Step 4 — Stats */}
+          <div>
+            <div className="mb-1"><StepChip n={4} label="current scenario stats" /></div>
+            <div className="space-y-2">
+              <MetricsCards metrics={metrics} inputs={inputs} />
+              <LifestyleGoalBar metrics={metrics} inputs={inputs} />
+              <CashFlowBreakdown metrics={metrics} inputs={inputs} />
+            </div>
           </div>
 
         </main>

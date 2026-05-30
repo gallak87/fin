@@ -32,7 +32,7 @@ function Card({ label, value, sub, color, tooltip }: CardProps) {
   }[color]
 
   return (
-    <div className={`bg-gray-800 rounded-xl p-3 border ${border} flex flex-col gap-0.5`}>
+    <div className={`bg-gray-800 rounded-lg p-2.5 border ${border} flex flex-col gap-0.5`}>
       <div className="flex items-center gap-1">
         <span className="text-xs text-gray-500 uppercase tracking-wide">{label}</span>
         {tooltip && (
