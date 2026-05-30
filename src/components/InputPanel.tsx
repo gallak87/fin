@@ -31,7 +31,7 @@ function SliderRow({
     <div className="space-y-1">
       <div className="flex justify-between items-center">
         <div className="flex items-center gap-1">
-          <span className="text-xs text-gray-400">{label}</span>
+          <span className="text-xs lg:text-sm text-gray-300">{label}</span>
           {tooltip && (
             <Tooltip content={tooltip}>
               <span className="text-gray-600 hover:text-gray-400 text-xs">ℹ</span>
@@ -76,12 +76,12 @@ function NumberInput({
           </Tooltip>
         )}
       </div>
-      <span className="text-xs text-gray-500 text-right">{prefix}</span>
+      <span className="text-xs text-gray-400 text-right">{prefix}</span>
       <input
         type="number"
         value={value}
         onChange={(e) => onChange(Number(e.target.value))}
-        className="w-full text-xs text-right bg-gray-800 border border-gray-700 rounded px-2 py-1 text-white"
+        className="w-full text-xs lg:text-sm text-right bg-gray-900 border border-gray-700 rounded px-2 py-1 text-white"
       />
     </div>
   )
@@ -101,7 +101,7 @@ function Toggle({
   return (
     <div className="flex items-center justify-between">
       <div className="flex items-center gap-1">
-        <span className="text-xs text-gray-400">{label}</span>
+        <span className="text-xs lg:text-sm text-gray-300">{label}</span>
         {tooltip && (
           <Tooltip content={tooltip}>
             <span className="text-gray-600 hover:text-gray-400 text-xs">ℹ</span>
@@ -122,7 +122,7 @@ function Toggle({
 
 function SectionHeader({ label }: { label: string }) {
   return (
-    <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider pt-1 pb-0.5 border-t border-gray-800 mt-1">
+    <div className="text-xs lg:text-sm font-semibold text-gray-400 uppercase tracking-wider pt-1 pb-0.5 border-t border-gray-800 mt-1">
       {label}
     </div>
   )
@@ -140,7 +140,7 @@ function CollapsibleSectionHeader({
   return (
     <button
       onClick={onToggle}
-      className="w-full flex items-center gap-1.5 text-xs font-semibold text-gray-500 uppercase tracking-wider pt-1 pb-0.5 border-t border-gray-800 mt-1 hover:text-gray-400"
+      className="w-full flex items-center gap-1.5 text-xs lg:text-sm font-semibold text-gray-400 uppercase tracking-wider pt-1 pb-0.5 border-t border-gray-800 mt-1 hover:text-gray-200"
     >
       <span className="text-base leading-none font-light">{open ? '−' : '+'}</span>
       <span>{label}</span>
@@ -233,7 +233,7 @@ export function InputPanel() {
 
       <div className="space-y-1">
         <div className="flex items-center justify-between">
-          <span className="text-xs text-gray-400">Down payment sources</span>
+          <span className="text-xs lg:text-sm text-gray-300">Down payment sources</span>
           <span className={`text-xs font-mono font-semibold ${downPctColor}`}>
             {downPct.toFixed(1)}% (${fmt(downTotal)})
           </span>
@@ -265,7 +265,7 @@ export function InputPanel() {
       />
 
       <div className="flex items-center justify-between">
-        <span className="text-xs text-gray-400">Loan term</span>
+        <span className="text-xs lg:text-sm text-gray-300">Loan term</span>
         <div className="flex gap-1">
           {([30, 15] as const).map((t) => (
             <button

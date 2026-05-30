@@ -24,47 +24,36 @@ export function LifestyleGoalBar({ metrics, inputs }: Props) {
     available >= 5000 ? 'bg-green-500' : available >= 2000 ? 'bg-yellow-400' : 'bg-red-500'
 
   return (
-    <div className="bg-gray-800 rounded-xl p-3 border border-gray-700 space-y-1.5">
-      {/* Row 1 — label + total */}
-      <div className="flex items-center justify-between text-[11px]">
-        <span className="text-gray-500 uppercase tracking-wide">net income after tax / month</span>
-        <span className="text-gray-300 font-mono">${fmt(takeHome)}</span>
+    <div className="bg-gray-900 rounded-xl p-3 border border-gray-800 space-y-2">
+      <div className="flex items-center justify-between">
+        <span className="text-xs lg:text-sm text-gray-400 uppercase tracking-wide">net income after tax / month</span>
+        <span className="text-xs lg:text-sm text-gray-200 font-mono">${fmt(takeHome)}</span>
       </div>
 
-      {/* Row 2 — reference bar (full = take-home) */}
+      {/* reference bar */}
       <div className="w-full h-2 bg-gray-600 rounded-full" />
 
-      {/* Row 3 — stacked cost bar, empty tail = available */}
+      {/* cost bar */}
       <div className="w-full h-2 bg-gray-700 rounded-full overflow-hidden flex">
-        <div
-          className="h-full bg-blue-600 shrink-0"
-          style={{ width: `${pitiPct}%` }}
-          title={`Housing: $${fmt(monthlyPITI)}/mo`}
-        />
-        <div
-          className="h-full bg-orange-500 shrink-0"
-          style={{ width: `${expPct}%` }}
-          title={`Expenses: $${fmt(expenses)}/mo`}
-        />
+        <div className="h-full bg-blue-600 shrink-0" style={{ width: `${pitiPct}%` }} />
+        <div className="h-full bg-orange-500 shrink-0" style={{ width: `${expPct}%` }} />
       </div>
 
-      {/* Legend */}
-      <div className="flex gap-3 text-[11px] text-gray-500 pb-0.5">
-        <span className="flex items-center gap-1">
-          <span className="w-2 h-2 rounded-sm bg-blue-600 inline-block" />
+      <div className="flex gap-4 text-xs lg:text-sm text-gray-400">
+        <span className="flex items-center gap-1.5">
+          <span className="w-2.5 h-2.5 rounded-sm bg-blue-600 inline-block shrink-0" />
           housing ${fmt(monthlyPITI)}
         </span>
-        <span className="flex items-center gap-1">
-          <span className="w-2 h-2 rounded-sm bg-orange-500 inline-block" />
+        <span className="flex items-center gap-1.5">
+          <span className="w-2.5 h-2.5 rounded-sm bg-orange-500 inline-block shrink-0" />
           expenses ${fmt(expenses)}
         </span>
       </div>
 
-      {/* Divider + available */}
-      <div className="border-t border-gray-700 pt-1.5 flex items-center gap-2">
-        <span className={`w-2 h-2 rounded-full shrink-0 ${dotColor}`} />
-        <span className={`text-sm font-semibold ${amountColor}`}>${fmt(available)}</span>
-        <span className="text-xs text-gray-500">/ mo available</span>
+      <div className="border-t border-gray-800 pt-2 flex items-center gap-2">
+        <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${dotColor}`} />
+        <span className={`text-base font-semibold ${amountColor}`}>${fmt(available)}</span>
+        <span className="text-xs lg:text-sm text-gray-400">/ mo available</span>
         {available < 0 && (
           <span className="text-xs text-red-400 ml-auto">shortfall — income doesn&apos;t cover costs</span>
         )}

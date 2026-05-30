@@ -25,12 +25,12 @@ function Pill({ label, value, color, tooltip }: PillProps) {
   }[color]
 
   return (
-    <div className={`inline-flex items-center gap-1.5 bg-gray-800 border ${border} rounded-full px-3 py-1`}>
-      <span className="text-[11px] text-gray-500">{label}</span>
-      <span className="text-[11px] font-semibold font-mono">{value}</span>
+    <div className={`inline-flex items-center gap-1.5 bg-gray-900 border ${border} rounded-full px-3 py-1`}>
+      <span className="text-xs text-gray-400">{label}</span>
+      <span className="text-xs lg:text-sm font-semibold font-mono">{value}</span>
       {tooltip && (
         <Tooltip content={tooltip}>
-          <span className="text-gray-600 hover:text-gray-400 text-[10px] leading-none">ℹ</span>
+          <span className="text-gray-500 hover:text-gray-300 text-[10px] leading-none">ℹ</span>
         </Tooltip>
       )}
     </div>
