@@ -131,7 +131,7 @@ function SectionHeader({ label }: { label: string }) {
 }
 
 export function InputPanel() {
-  const { inputs, setInputs } = useStore()
+  const { inputs, setInputs, resetInputs } = useStore()
   const [showProjectionSliders, setShowProjectionSliders] = useState(false)
   const metrics = computeMetrics(inputs)
   const downTotal = totalDownPayment(inputs)
@@ -172,6 +172,14 @@ export function InputPanel() {
 
   return (
     <div className="space-y-3 text-sm">
+      <div className="flex justify-end">
+        <button
+          onClick={resetInputs}
+          className="text-xs text-gray-600 hover:text-gray-400"
+        >
+          Reset to defaults
+        </button>
+      </div>
       <SectionHeader label="Purchase" />
 
       <SliderRow
