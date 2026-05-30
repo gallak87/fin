@@ -145,6 +145,21 @@ export function InputPanel() {
     </div>
   )
 
+  const appreciationTooltip = (
+    <div className="space-y-1">
+      <div className="font-semibold">Annual Home Appreciation</div>
+      <div>There's no single formula — it's an assumption based on historical data for your market.</div>
+      <div className="text-gray-300 mt-1">How to estimate:</div>
+      <ul className="text-gray-400 space-y-0.5 list-disc list-inside">
+        <li>Look up your zip on Zillow or Redfin → "Market" tab → 5–10yr price history</li>
+        <li>Case-Shiller index: national avg ~3.5–4%/yr long-term</li>
+        <li>Seattle metro has run 4–7% in good decades, can go negative short-term</li>
+      </ul>
+      <div className="text-gray-400 mt-1">Conservative: 3% · Realistic: 4–5% · Optimistic: 6%+</div>
+      <div className="text-yellow-400 text-xs mt-1">Past appreciation ≠ future returns. Use this as a sensitivity dial, not a prediction.</div>
+    </div>
+  )
+
   const income2Tooltip = (
     <div className="space-y-1">
       <div className="font-semibold">Secondary Income</div>
@@ -245,6 +260,7 @@ export function InputPanel() {
         step={0.1}
         onChange={(v) => setInputs({ annualAppreciation: v })}
         display={`${inputs.annualAppreciation.toFixed(1)}%`}
+        tooltip={appreciationTooltip}
       />
       <SliderRow
         label="Investment return"
