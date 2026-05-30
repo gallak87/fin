@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { useStore } from '../store'
 import { EquitySourceList } from './EquitySourceList'
 import { Tooltip } from './Tooltip'
@@ -131,6 +132,7 @@ function SectionHeader({ label }: { label: string }) {
 
 export function InputPanel() {
   const { inputs, setInputs } = useStore()
+  const [showProjectionSliders, setShowProjectionSliders] = useState(false)
   const metrics = computeMetrics(inputs)
   const downTotal = totalDownPayment(inputs)
   const downPct = inputs.housePrice > 0 ? (downTotal / inputs.housePrice) * 100 : 0
@@ -252,25 +254,36 @@ export function InputPanel() {
       <NumberInput label="Monthly non-housing expenses" value={inputs.monthlyNonHousingExpenses} onChange={(v) => setInputs({ monthlyNonHousingExpenses: v })} />
       <NumberInput label="Current rent /mo" value={inputs.currentRent} onChange={(v) => setInputs({ currentRent: v })} />
 
-      <SliderRow
-        label="Annual appreciation"
-        value={inputs.annualAppreciation}
-        min={0}
-        max={8}
-        step={0.1}
-        onChange={(v) => setInputs({ annualAppreciation: v })}
-        display={`${inputs.annualAppreciation.toFixed(1)}%`}
-        tooltip={appreciationTooltip}
-      />
-      <SliderRow
-        label="Investment return"
-        value={inputs.investmentReturn}
-        min={0}
-        max={12}
-        step={0.1}
-        onChange={(v) => setInputs({ investmentReturn: v })}
-        display={`${inputs.investmentReturn.toFixed(1)}%`}
-      />
+      <button
+        onClick={() => setShowProjectionSliders((v) => !v)}
+        className="flex items-center gap-1 text-xs text-gray-600 hover:text-gray-400"
+      >
+        <span>{showProjectionSliders ? '▾' : '▸'}</span>
+        Projection assumptions ({inputs.annualAppreciation.toFixed(1)}% appreciation · {inputs.investmentReturn.toFixed(1)}% return)
+      </button>
+      {showProjectionSliders && (
+        <>
+          <SliderRow
+            label="Annual appreciation"
+            value={inputs.annualAppreciation}
+            min={0}
+            max={8}
+            step={0.1}
+            onChange={(v) => setInputs({ annualAppreciation: v })}
+            display={`${inputs.annualAppreciation.toFixed(1)}%`}
+            tooltip={appreciationTooltip}
+          />
+          <SliderRow
+            label="Investment return"
+            value={inputs.investmentReturn}
+            min={0}
+            max={12}
+            step={0.1}
+            onChange={(v) => setInputs({ investmentReturn: v })}
+            display={`${inputs.investmentReturn.toFixed(1)}%`}
+          />
+        </>
+      )}
     </div>
   )
 }
