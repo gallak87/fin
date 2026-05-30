@@ -7,7 +7,8 @@ export interface EquitySource {
 
 export interface Inputs {
   housePrice: number
-  liquidAssets: number
+  totalLiquidAssets: number
+  liquidDownPayment: number
   equitySources: EquitySource[]
   mortgageRate: number
   loanTermYears: 15 | 30
@@ -15,7 +16,7 @@ export interface Inputs {
   income1: number
   income2: number
   income2Active: boolean
-  monthlyTakeHome: number
+  effectiveTaxRate: number
   discretionaryGoal: number
   annualAppreciation: number
   investmentReturn: number
@@ -43,6 +44,7 @@ export interface Metrics {
   cashReserve: number
   monthsOfReserve: number
   opportunityCostAnnual: number
+  monthlyTakeHome: number
   discretionaryMonthly: number
   breakEvenYear: number | null
 }

@@ -80,7 +80,7 @@ function Toggle({
         className={`relative w-10 h-5 rounded-full transition-colors ${checked ? 'bg-blue-600' : 'bg-gray-600'}`}
       >
         <span
-          className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${checked ? 'translate-x-[22px]' : 'translate-x-0.5'}`}
+          className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-all duration-200 ${checked ? 'left-[22px]' : 'left-[2px]'}`}
         />
       </button>
     </div>
@@ -127,6 +127,7 @@ export function InputPanel() {
   const metrics = computeMetrics(inputs)
   const downTotal = totalDownPayment(inputs)
   const downPct = inputs.housePrice > 0 ? (downTotal / inputs.housePrice) * 100 : 0
+  const downPctFromLiquid = inputs.housePrice > 0 ? (inputs.liquidDownPayment / inputs.housePrice) * 100 : 0
   const downPctColor =
     downPct >= 30 ? 'text-green-400' : downPct >= 20 ? 'text-yellow-400' : 'text-red-400'
 
@@ -206,13 +207,22 @@ export function InputPanel() {
           </span>
         </div>
         <SliderRow
-          label="Liquid assets"
-          value={inputs.liquidAssets}
+          label="Total liquid assets"
+          value={inputs.totalLiquidAssets}
           min={50_000}
-          max={inputs.housePrice}
+          max={3_000_000}
           step={10_000}
-          onChange={(v) => setInputs({ liquidAssets: v })}
-          display={`$${fmt(inputs.liquidAssets)}`}
+          onChange={(v) => setInputs({ totalLiquidAssets: v, liquidDownPayment: Math.min(inputs.liquidDownPayment, v) })}
+          display={`$${fmt(inputs.totalLiquidAssets)}`}
+        />
+        <SliderRow
+          label="Using as down payment"
+          value={inputs.liquidDownPayment}
+          min={0}
+          max={inputs.totalLiquidAssets}
+          step={10_000}
+          onChange={(v) => setInputs({ liquidDownPayment: v })}
+          display={`$${fmt(inputs.liquidDownPayment)} (${downPctFromLiquid.toFixed(0)}%)`}
         />
         <div className="text-xs text-gray-500 pl-1">+ Equity to include:</div>
         <div className="pl-1">
@@ -263,13 +273,6 @@ export function InputPanel() {
         onChange={(v) => setInputs({ income1: v })}
         display={`$${fmt(inputs.income1)}`}
       />
-      <SliderRow
-        label="Take-home pay /mo"
-        value={inputs.monthlyTakeHome}
-        min={2_000} max={40_000} step={250}
-        onChange={(v) => setInputs({ monthlyTakeHome: v })}
-        display={`$${fmt(inputs.monthlyTakeHome)}`}
-      />
       <Toggle
         label="Secondary income active"
         checked={inputs.income2Active}
@@ -285,6 +288,19 @@ export function InputPanel() {
           display={`$${fmt(inputs.income2)}`}
         />
       )}
+      <SliderRow
+        label="Effective tax rate"
+        value={inputs.effectiveTaxRate}
+        min={10} max={50} step={1}
+        onChange={(v) => setInputs({ effectiveTaxRate: v })}
+        display={`${inputs.effectiveTaxRate}%`}
+      />
+      <div className="flex justify-between items-center">
+        <span className="text-xs lg:text-sm text-gray-500">Est. take-home /mo</span>
+        <span className="text-xs lg:text-sm font-mono text-gray-300">
+          ${fmt(Math.round(((inputs.income1 + (inputs.income2Active ? inputs.income2 : 0)) / 12) * (1 - inputs.effectiveTaxRate / 100)))}
+        </span>
+      </div>
 
       <SectionHeader label="Goals & Assumptions" />
 

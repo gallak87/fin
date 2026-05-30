@@ -12,7 +12,7 @@ export function totalDownPayment(inputs: Inputs): number {
   const equity = inputs.equitySources
     .filter(s => s.include)
     .reduce((sum, s) => sum + s.amount, 0)
-  return inputs.liquidAssets + equity
+  return inputs.liquidDownPayment + equity
 }
 
 export function computeMetrics(inputs: Inputs): Metrics {
@@ -29,16 +29,15 @@ export function computeMetrics(inputs: Inputs): Metrics {
     (inputs.income1 + (inputs.income2Active ? inputs.income2 : 0)) / 12
   const frontEndDTI = grossMonthlyIncome > 0 ? (monthlyPITI / grossMonthlyIncome) * 100 : 0
 
-  // Cash left after purchase (liquid assets only — equity sources converted to down payment)
-  const equityUsed = inputs.equitySources
-    .filter(s => s.include)
-    .reduce((sum, s) => sum + s.amount, 0)
-  const cashReserve = inputs.liquidAssets - (downPayment - equityUsed)
+  const cashReserve = inputs.totalLiquidAssets - inputs.liquidDownPayment
   const monthlyExpenses = inputs.monthlyNonHousingExpenses + monthlyPITI
   const monthsOfReserve = monthlyExpenses > 0 ? cashReserve / monthlyExpenses : 0
 
   const opportunityCostAnnual = downPayment * (inputs.investmentReturn / 100)
-  const discretionaryMonthly = inputs.monthlyTakeHome - monthlyPITI - inputs.monthlyNonHousingExpenses
+  const monthlyTakeHome =
+    ((inputs.income1 + (inputs.income2Active ? inputs.income2 : 0)) / 12) *
+    (1 - inputs.effectiveTaxRate / 100)
+  const discretionaryMonthly = monthlyTakeHome - monthlyPITI - inputs.monthlyNonHousingExpenses
 
   const breakEvenYear = computeBreakEven(inputs, downPayment, loanAmount, monthlyPITI)
 
@@ -55,6 +54,7 @@ export function computeMetrics(inputs: Inputs): Metrics {
     cashReserve,
     monthsOfReserve,
     opportunityCostAnnual,
+    monthlyTakeHome,
     discretionaryMonthly,
     breakEvenYear,
   }

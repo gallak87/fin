@@ -24,17 +24,16 @@ function Pill({ label, value, color, tooltip }: PillProps) {
     neutral: 'border-gray-700 text-white',
   }[color]
 
-  return (
-    <div className={`inline-flex items-center gap-1.5 bg-gray-900 border ${border} rounded-full px-3 py-1`}>
+  const pill = (
+    <div className={`inline-flex items-center gap-1.5 bg-gray-900 border ${border} rounded-full px-3 py-1 ${tooltip ? 'cursor-help' : ''}`}>
       <span className="text-xs text-gray-400">{label}</span>
       <span className="text-xs lg:text-sm font-semibold font-mono">{value}</span>
-      {tooltip && (
-        <Tooltip content={tooltip}>
-          <span className="text-gray-500 hover:text-gray-300 text-[10px] leading-none">ℹ</span>
-        </Tooltip>
-      )}
     </div>
   )
+
+  if (!tooltip) return pill
+
+  return <Tooltip content={tooltip}>{pill}</Tooltip>
 }
 
 interface Props {
@@ -46,10 +45,24 @@ export function MetricsCards({ metrics }: Props) {
   const dtiColor = metrics.frontEndDTI < 28 ? 'green' : metrics.frontEndDTI < 36 ? 'yellow' : 'red'
   const cashColor = metrics.monthsOfReserve > 6 ? 'green' : metrics.monthsOfReserve > 3 ? 'yellow' : 'red'
   const downColor = metrics.downPaymentPct >= 30 ? 'green' : metrics.downPaymentPct >= 20 ? 'yellow' : 'red'
+  const breakEvenColor = metrics.breakEvenYear !== null && metrics.breakEvenYear <= 7 ? 'green' : metrics.breakEvenYear !== null && metrics.breakEvenYear <= 12 ? 'yellow' : 'red'
 
   return (
     <div className="flex flex-wrap gap-2">
-      <Pill label="PITI" value={`$${fmt(metrics.monthlyPITI)}/mo`} color="neutral" />
+      <Pill
+        label="PITI"
+        value={`$${fmt(metrics.monthlyPITI)}/mo`}
+        color="neutral"
+        tooltip={
+          <div className="space-y-1">
+            <div className="font-semibold">Monthly PITI</div>
+            <div>Principal + Interest + Tax + Insurance. Your total housing payment.</div>
+            <div className="text-gray-400 mt-1">
+              P&I ${fmt(metrics.monthlyPI)} · Tax ${fmt(metrics.monthlyTax)} · Ins ${fmt(metrics.monthlyInsurance)}
+            </div>
+          </div>
+        }
+      />
       <Pill
         label="DTI"
         value={`${metrics.frontEndDTI.toFixed(1)}%`}
@@ -57,7 +70,8 @@ export function MetricsCards({ metrics }: Props) {
         tooltip={
           <div className="space-y-1">
             <div className="font-semibold">Front-end DTI</div>
-            <div className="text-green-400">{'< 28%'} — comfortable</div>
+            <div>Housing cost as % of gross monthly income. Lenders use this to qualify you.</div>
+            <div className="text-green-400 mt-1">{'< 28%'} — comfortable</div>
             <div className="text-yellow-400">28–36% — acceptable</div>
             <div className="text-red-400">{'> 36%'} — lender ceiling</div>
           </div>
@@ -70,7 +84,8 @@ export function MetricsCards({ metrics }: Props) {
         tooltip={
           <div className="space-y-1">
             <div className="font-semibold">Cash Reserves After Purchase</div>
-            <div className="text-green-400">{'> 6 months'} — strong buffer</div>
+            <div>Liquid cash left after closing. Covers emergencies, repairs, job gaps.</div>
+            <div className="text-green-400 mt-1">{'> 6 months'} — strong buffer</div>
             <div className="text-yellow-400">3–6 months — adequate</div>
             <div className="text-red-400">{'< 3 months'} — tight</div>
           </div>
@@ -83,16 +98,26 @@ export function MetricsCards({ metrics }: Props) {
         tooltip={
           <div className="space-y-1">
             <div className="font-semibold">Down Payment %</div>
-            <div className="text-green-400">30–50% — strong equity cushion</div>
+            <div>Higher down = smaller loan, lower monthly payment, more equity on day 1.</div>
+            <div className="text-green-400 mt-1">30–50% — strong equity cushion</div>
             <div className="text-yellow-400">20–29% — avoids PMI</div>
-            <div className="text-red-400">{'< 20%'} — PMI territory</div>
+            <div className="text-red-400">{'< 20%'} — PMI territory, lender scrutiny</div>
           </div>
         }
       />
       <Pill
         label="Break-even"
         value={metrics.breakEvenYear !== null ? `Yr ${metrics.breakEvenYear}` : '>30yr'}
-        color={metrics.breakEvenYear !== null && metrics.breakEvenYear <= 7 ? 'green' : metrics.breakEvenYear !== null && metrics.breakEvenYear <= 12 ? 'yellow' : 'red'}
+        color={breakEvenColor}
+        tooltip={
+          <div className="space-y-1">
+            <div className="font-semibold">Break-even vs Renting</div>
+            <div>The year when buying puts you financially ahead of renting + investing the down payment. Matches the chart crossover.</div>
+            <div className="text-green-400 mt-1">{'≤ 7 years'} — strong case to buy</div>
+            <div className="text-yellow-400">8–12 years — depends on how long you stay</div>
+            <div className="text-red-400">{'> 12 years'} — renting likely wins unless you plan to stay long-term</div>
+          </div>
+        }
       />
     </div>
   )

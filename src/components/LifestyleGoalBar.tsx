@@ -10,8 +10,7 @@ interface Props {
 }
 
 export function LifestyleGoalBar({ metrics, inputs }: Props) {
-  const { monthlyPITI } = metrics
-  const takeHome = inputs.monthlyTakeHome ?? 0
+  const { monthlyPITI, monthlyTakeHome: takeHome } = metrics
   const expenses = inputs.monthlyNonHousingExpenses
   const available = takeHome - monthlyPITI - expenses
 

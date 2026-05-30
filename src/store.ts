@@ -6,7 +6,8 @@ export const BASE_SCENARIO_ID = 'base'
 
 const DEFAULT_INPUTS: Inputs = {
   housePrice: 1_450_000,
-  liquidAssets: 600_000,
+  totalLiquidAssets: 800_000,
+  liquidDownPayment: 600_000,
   equitySources: [
     { id: 'tn', name: 'TN House', amount: 204_000, include: false },
     { id: 'sea', name: 'Seattle Condo', amount: 270_000, include: false },
@@ -17,7 +18,7 @@ const DEFAULT_INPUTS: Inputs = {
   income1: 240_000,
   income2: 200_000,
   income2Active: false,
-  monthlyTakeHome: 15_000,
+  effectiveTaxRate: 28,
   discretionaryGoal: 3_000,
   annualAppreciation: 3.5,
   investmentReturn: 6.0,
