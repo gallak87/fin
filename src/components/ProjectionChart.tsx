@@ -52,7 +52,8 @@ export function ProjectionChart({ projections }: Props) {
     <div className="bg-gray-800 rounded-xl p-2 border border-gray-700 space-y-2">
       <div className="text-xs text-gray-600 text-right">above $0 = buying wins · below $0 = renting wins</div>
 
-      <ResponsiveContainer width="100%" height={340}>
+      <div className="h-[220px] sm:h-[340px]">
+      <ResponsiveContainer width="100%" height="100%">
         <LineChart data={data} margin={{ top: 4, right: 12, left: 0, bottom: 0 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#1f2937" />
           <XAxis
@@ -102,6 +103,7 @@ export function ProjectionChart({ projections }: Props) {
           ))}
         </LineChart>
       </ResponsiveContainer>
+      </div>
 
       <div className="flex flex-wrap gap-x-4 gap-y-1 pt-1 border-t border-gray-700/50">
         {projections.map((proj, i) => (

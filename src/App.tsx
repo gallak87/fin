@@ -79,7 +79,7 @@ export default function App() {
 
           {/* Step 3 — Compare */}
           <div>
-            <div className="mb-1 flex items-center justify-between flex-wrap gap-2">
+            <div className="mb-1 flex flex-wrap items-center gap-2">
               <StepChip n={3} label="compare · check to plot" />
               <MetricsCards metrics={metrics} inputs={inputs} />
             </div>

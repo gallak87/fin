@@ -15,7 +15,7 @@ export function ScenarioList() {
           return (
             <div
               key={sc.id}
-              className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] transition-colors ${
+              className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] transition-colors cursor-default ${
                 isSelected
                   ? 'bg-blue-950 border-blue-700 text-blue-200'
                   : 'bg-gray-900 border-gray-700 text-gray-400'
@@ -29,7 +29,7 @@ export function ScenarioList() {
               />
               <button
                 onClick={() => loadScenario(sc.id)}
-                className="hover:text-white transition-colors"
+                className="hover:text-white transition-colors cursor-pointer"
                 title="Load into inputs"
               >
                 {sc.name}
