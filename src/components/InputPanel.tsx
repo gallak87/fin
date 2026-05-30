@@ -67,24 +67,22 @@ function NumberInput({
   tooltip?: React.ReactNode
 }) {
   return (
-    <div className="flex items-center justify-between gap-2">
-      <div className="flex items-center gap-1 shrink-0">
-        <span className="text-xs text-gray-400">{label}</span>
+    <div className="grid items-center gap-1" style={{ gridTemplateColumns: '1fr 1rem 6rem' }}>
+      <div className="flex items-center gap-1 min-w-0">
+        <span className="text-xs text-gray-400 truncate">{label}</span>
         {tooltip && (
           <Tooltip content={tooltip}>
-            <span className="text-gray-600 hover:text-gray-400 text-xs">ℹ</span>
+            <span className="text-gray-600 hover:text-gray-400 text-xs shrink-0">ℹ</span>
           </Tooltip>
         )}
       </div>
-      <div className="flex items-center gap-1">
-        <span className="text-xs text-gray-500">{prefix}</span>
-        <input
-          type="number"
-          value={value}
-          onChange={(e) => onChange(Number(e.target.value))}
-          className="w-28 text-xs text-right bg-gray-800 border border-gray-700 rounded px-2 py-1 text-white"
-        />
-      </div>
+      <span className="text-xs text-gray-500 text-right">{prefix}</span>
+      <input
+        type="number"
+        value={value}
+        onChange={(e) => onChange(Number(e.target.value))}
+        className="w-full text-xs text-right bg-gray-800 border border-gray-700 rounded px-2 py-1 text-white"
+      />
     </div>
   )
 }
@@ -127,6 +125,26 @@ function SectionHeader({ label }: { label: string }) {
     <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider pt-1 pb-0.5 border-t border-gray-800 mt-1">
       {label}
     </div>
+  )
+}
+
+function CollapsibleSectionHeader({
+  label,
+  open,
+  onToggle,
+}: {
+  label: string
+  open: boolean
+  onToggle: () => void
+}) {
+  return (
+    <button
+      onClick={onToggle}
+      className="w-full flex items-center justify-between text-xs font-semibold text-gray-500 uppercase tracking-wider pt-1 pb-0.5 border-t border-gray-800 mt-1 hover:text-gray-400"
+    >
+      <span>{label}</span>
+      <span className="text-base leading-none font-light">{open ? '−' : '+'}</span>
+    </button>
   )
 }
 
@@ -175,7 +193,7 @@ export function InputPanel() {
       <div className="flex justify-end">
         <button
           onClick={resetInputs}
-          className="text-xs text-gray-600 hover:text-gray-400"
+          className="text-xs text-gray-500 hover:text-gray-300 border border-gray-700 hover:border-gray-500 rounded px-2 py-1 transition-colors"
         >
           Reset to defaults
         </button>
@@ -262,13 +280,11 @@ export function InputPanel() {
       <NumberInput label="Monthly non-housing expenses" value={inputs.monthlyNonHousingExpenses} onChange={(v) => setInputs({ monthlyNonHousingExpenses: v })} />
       <NumberInput label="Current rent /mo" value={inputs.currentRent} onChange={(v) => setInputs({ currentRent: v })} />
 
-      <button
-        onClick={() => setShowProjectionSliders((v) => !v)}
-        className="flex items-center gap-1 text-xs text-gray-600 hover:text-gray-400"
-      >
-        <span>{showProjectionSliders ? '▾' : '▸'}</span>
-        Projection assumptions ({inputs.annualAppreciation.toFixed(1)}% appreciation · {inputs.investmentReturn.toFixed(1)}% return)
-      </button>
+      <CollapsibleSectionHeader
+        label={`Projection assumptions${!showProjectionSliders ? ` · ${inputs.annualAppreciation.toFixed(1)}% / ${inputs.investmentReturn.toFixed(1)}%` : ''}`}
+        open={showProjectionSliders}
+        onToggle={() => setShowProjectionSliders((v) => !v)}
+      />
       {showProjectionSliders && (
         <>
           <SliderRow
