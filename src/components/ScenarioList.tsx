@@ -1,39 +1,42 @@
 import { useState } from 'react'
-import { useStore } from '../store'
+import { useStore, BASE_SCENARIO_ID } from '../store'
 
 export function ScenarioList() {
-  const { scenarios, selectedIds, loadScenario, deleteScenario, toggleSelected } = useStore()
+  const { scenarios, selectedIds, activeScenarioId, loadScenario, deleteScenario, toggleSelected } = useStore()
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null)
 
   return (
     <div className="min-h-[32px] flex flex-wrap items-center gap-2">
-      {scenarios.length === 0 ? (
-        <span className="text-[11px] text-gray-700 italic">no scenarios yet — configure inputs and save ↙</span>
-      ) : (
-        scenarios.map((sc) => {
-          const isSelected = selectedIds.includes(sc.id)
-          return (
-            <div
-              key={sc.id}
-              className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] transition-colors cursor-default ${
-                isSelected
+      {scenarios.map((sc) => {
+        const isActive = sc.id === activeScenarioId
+        const isSelected = selectedIds.includes(sc.id)
+        const isBase = sc.id === BASE_SCENARIO_ID
+
+        return (
+          <div
+            key={sc.id}
+            className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] transition-colors cursor-default ${
+              isActive
+                ? 'bg-amber-950 border-amber-600 text-amber-200'
+                : isSelected
                   ? 'bg-blue-950 border-blue-700 text-blue-200'
                   : 'bg-gray-900 border-gray-700 text-gray-400'
-              }`}
+            }`}
+          >
+            <input
+              type="checkbox"
+              checked={isSelected}
+              onChange={() => toggleSelected(sc.id)}
+              className="w-3 h-3 accent-blue-500 shrink-0"
+            />
+            <button
+              onClick={() => loadScenario(sc.id)}
+              className="hover:text-white transition-colors cursor-pointer"
+              title="Edit this scenario"
             >
-              <input
-                type="checkbox"
-                checked={isSelected}
-                onChange={() => toggleSelected(sc.id)}
-                className="w-3 h-3 accent-blue-500 shrink-0"
-              />
-              <button
-                onClick={() => loadScenario(sc.id)}
-                className="hover:text-white transition-colors cursor-pointer"
-                title="Load into inputs"
-              >
-                {sc.name}
-              </button>
+              {sc.name}
+            </button>
+            {!isBase && (
               <button
                 onClick={() => setConfirmDelete(sc.id)}
                 className="text-gray-600 hover:text-red-400 leading-none ml-0.5"
@@ -41,10 +44,10 @@ export function ScenarioList() {
               >
                 ×
               </button>
-            </div>
-          )
-        })
-      )}
+            )}
+          </div>
+        )
+      })}
 
       {confirmDelete && (
         <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">

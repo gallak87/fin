@@ -19,7 +19,8 @@ function StepChip({ n, label }: { n: number; label: string }) {
 }
 
 export default function App() {
-  const { inputs, scenarios, selectedIds } = useStore()
+  const { inputs, scenarios, selectedIds, activeScenarioId } = useStore()
+  const activeScenario = scenarios.find((s) => s.id === activeScenarioId)
   const metrics = computeMetrics(inputs)
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [compareOpen, setCompareOpen] = useState(false)
@@ -58,10 +59,15 @@ export default function App() {
             md:w-80 md:shrink-0 md:block md:border-r md:border-gray-800 md:overflow-y-auto
             ${drawerOpen ? 'block' : 'hidden'}
             bg-gray-950 border-b border-gray-800
+            border-l-2 border-l-yellow-500/60
+            shadow-[inset_4px_0_12px_rgba(234,179,8,0.06)]
           `}
         >
-          <div className="px-4 pt-3 pb-1">
+          <div className="px-4 pt-3 pb-1 flex items-center justify-between">
             <StepChip n={1} label="configure inputs" />
+            <span className="text-[10px] text-amber-500/80 font-medium tracking-wide">
+              editing: {activeScenario?.name ?? '—'}
+            </span>
           </div>
           <div className="px-4 pb-4">
             <InputPanel />

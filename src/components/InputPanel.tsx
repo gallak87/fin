@@ -316,9 +316,9 @@ export function InputPanel() {
         </>
       )}
 
-      {/* Save scenario — bottom of sidebar */}
+      {/* Fork as new scenario — bottom of sidebar */}
       <div className="pt-3 mt-1 border-t border-gray-800 space-y-2">
-        <div className="text-xs text-gray-600">Save current inputs as a scenario</div>
+        <div className="text-xs text-gray-600">Fork as new scenario</div>
         <div className="flex gap-2">
           <input
             type="text"
