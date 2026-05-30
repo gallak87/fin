@@ -66,33 +66,28 @@ function computeBreakEven(
   loanAmount: number,
   monthlyPITI: number,
 ): number | null {
+  // Uses identical math to projectNetWorth so the pill always matches the chart
   const monthlyRate = inputs.mortgageRate / 100 / 12
-  let balance = loanAmount
-
-  let cumulativeBuyCost = downPayment
-  let cumulativeRentCost = 0
-  let homeValue = inputs.housePrice
+  const monthlyPI = monthlyPayment(loanAmount, inputs.mortgageRate, inputs.loanTermYears)
+  const monthlySurplus = monthlyPITI - inputs.currentRent
   const investReturn = inputs.investmentReturn / 100
   const appreciation = inputs.annualAppreciation / 100
 
-  // Track what the down payment would be worth if invested instead
+  let balance = loanAmount
+  let homeValue = inputs.housePrice
   let investedDown = downPayment
 
   for (let year = 1; year <= 30; year++) {
     for (let m = 0; m < 12; m++) {
       const interest = balance * monthlyRate
-      const principal = Math.min(balance, monthlyPITI - interest > 0 ? monthlyPITI - interest : 0)
-      balance = Math.max(0, balance - principal)
-      cumulativeBuyCost += monthlyPITI
-      cumulativeRentCost += inputs.currentRent
+      balance = Math.max(0, balance - Math.max(0, monthlyPI - interest))
     }
     homeValue *= 1 + appreciation
     investedDown *= 1 + investReturn
-    // monthly rent surplus vs PITI also invested
-    const annualRentSurplus = (monthlyPITI - inputs.currentRent) * 12
 
-    const buyNetWorth = homeValue - balance - cumulativeBuyCost + downPayment
-    const rentNetWorth = investedDown + annualRentSurplus * year - cumulativeRentCost
+    // cashReserve term is identical in both paths so it cancels in the delta
+    const buyNetWorth = homeValue - balance
+    const rentNetWorth = investedDown - monthlySurplus * 12 * year
 
     if (buyNetWorth >= rentNetWorth) return year
   }
