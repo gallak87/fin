@@ -140,10 +140,10 @@ function CollapsibleSectionHeader({
   return (
     <button
       onClick={onToggle}
-      className="w-full flex items-center justify-between text-xs font-semibold text-gray-500 uppercase tracking-wider pt-1 pb-0.5 border-t border-gray-800 mt-1 hover:text-gray-400"
+      className="w-full flex items-center gap-1.5 text-xs font-semibold text-gray-500 uppercase tracking-wider pt-1 pb-0.5 border-t border-gray-800 mt-1 hover:text-gray-400"
     >
-      <span>{label}</span>
       <span className="text-base leading-none font-light">{open ? '−' : '+'}</span>
+      <span>{label}</span>
     </button>
   )
 }
