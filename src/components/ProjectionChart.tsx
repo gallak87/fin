@@ -50,10 +50,7 @@ export function ProjectionChart({ projections }: Props) {
 
   return (
     <div className="bg-gray-800 rounded-xl p-4 border border-gray-700 space-y-3">
-      <div className="flex items-center justify-between">
-        <div className="text-xs text-gray-500 uppercase tracking-wide">Buying advantage over renting</div>
-        <div className="text-xs text-gray-600">above $0 = buying wins · below = renting wins</div>
-      </div>
+      <div className="text-xs text-gray-600 text-right">above $0 = buying wins · below $0 = renting wins</div>
 
       <ResponsiveContainer width="100%" height={340}>
         <LineChart data={data} margin={{ top: 4, right: 12, left: 0, bottom: 0 }}>
