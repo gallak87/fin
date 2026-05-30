@@ -53,39 +53,6 @@ function SliderRow({
   )
 }
 
-function NumberInput({
-  label,
-  value,
-  onChange,
-  prefix = '$',
-  tooltip,
-}: {
-  label: string
-  value: number
-  onChange: (v: number) => void
-  prefix?: string
-  tooltip?: React.ReactNode
-}) {
-  return (
-    <div className="grid items-center gap-1" style={{ gridTemplateColumns: '1fr 1rem 6rem' }}>
-      <div className="flex items-center gap-1 min-w-0">
-        <span className="text-xs text-gray-400 truncate" title={label}>{label}</span>
-        {tooltip && (
-          <Tooltip content={tooltip}>
-            <span className="text-gray-600 hover:text-gray-400 text-xs shrink-0">ℹ</span>
-          </Tooltip>
-        )}
-      </div>
-      <span className="text-xs text-gray-400 text-right">{prefix}</span>
-      <input
-        type="number"
-        value={value}
-        onChange={(e) => onChange(Number(e.target.value))}
-        className="w-full text-xs lg:text-sm text-right bg-gray-900 border border-gray-700 rounded px-2 py-1 text-white"
-      />
-    </div>
-  )
-}
 
 function Toggle({
   label,
@@ -279,17 +246,30 @@ export function InputPanel() {
         </div>
       </div>
 
-      <NumberInput
+      <SliderRow
         label="Property tax rate"
         value={inputs.propertyTaxRate}
+        min={0.5} max={3.0} step={0.05}
         onChange={(v) => setInputs({ propertyTaxRate: v })}
-        prefix="%"
+        display={`${inputs.propertyTaxRate.toFixed(2)}%`}
       />
 
       <SectionHeader label="Income" />
 
-      <NumberInput label="Primary income" value={inputs.income1} onChange={(v) => setInputs({ income1: v })} />
-      <NumberInput label="Take-home pay /mo" value={inputs.monthlyTakeHome} onChange={(v) => setInputs({ monthlyTakeHome: v })} />
+      <SliderRow
+        label="Primary income /yr"
+        value={inputs.income1}
+        min={50_000} max={600_000} step={5_000}
+        onChange={(v) => setInputs({ income1: v })}
+        display={`$${fmt(inputs.income1)}`}
+      />
+      <SliderRow
+        label="Take-home pay /mo"
+        value={inputs.monthlyTakeHome}
+        min={2_000} max={40_000} step={250}
+        onChange={(v) => setInputs({ monthlyTakeHome: v })}
+        display={`$${fmt(inputs.monthlyTakeHome)}`}
+      />
       <Toggle
         label="Secondary income active"
         checked={inputs.income2Active}
@@ -297,18 +277,38 @@ export function InputPanel() {
         tooltip={income2Tooltip}
       />
       {inputs.income2Active && (
-        <NumberInput label="Secondary income" value={inputs.income2} onChange={(v) => setInputs({ income2: v })} />
+        <SliderRow
+          label="Secondary income /yr"
+          value={inputs.income2}
+          min={50_000} max={600_000} step={5_000}
+          onChange={(v) => setInputs({ income2: v })}
+          display={`$${fmt(inputs.income2)}`}
+        />
       )}
 
       <SectionHeader label="Goals & Assumptions" />
 
-      <NumberInput
+      <SliderRow
         label="Discretionary goal /mo"
         value={inputs.discretionaryGoal}
+        min={500} max={20_000} step={250}
         onChange={(v) => setInputs({ discretionaryGoal: v })}
+        display={`$${fmt(inputs.discretionaryGoal)}`}
       />
-      <NumberInput label="Monthly non-housing expenses" value={inputs.monthlyNonHousingExpenses} onChange={(v) => setInputs({ monthlyNonHousingExpenses: v })} />
-      <NumberInput label="Current rent /mo" value={inputs.currentRent} onChange={(v) => setInputs({ currentRent: v })} />
+      <SliderRow
+        label="Non-housing expenses /mo"
+        value={inputs.monthlyNonHousingExpenses}
+        min={500} max={15_000} step={250}
+        onChange={(v) => setInputs({ monthlyNonHousingExpenses: v })}
+        display={`$${fmt(inputs.monthlyNonHousingExpenses)}`}
+      />
+      <SliderRow
+        label="Current rent /mo"
+        value={inputs.currentRent}
+        min={500} max={10_000} step={50}
+        onChange={(v) => setInputs({ currentRent: v })}
+        display={`$${fmt(inputs.currentRent)}`}
+      />
 
       <CollapsibleSectionHeader
         label={`Projection assumptions${!showProjectionSliders ? ` · ${inputs.annualAppreciation.toFixed(1)}% / ${inputs.investmentReturn.toFixed(1)}%` : ''}`}
