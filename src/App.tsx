@@ -71,16 +71,16 @@ export default function App() {
         {/* Main */}
         <main className="flex-1 overflow-y-auto p-3 space-y-2">
 
-          {/* Step 2 — Save scenarios */}
-          <div>
-            <div className="mb-1"><StepChip n={2} label="save as a scenario · repeat for each situation" /></div>
+          {/* Scenario pills strip */}
+          <div className="flex items-center gap-2 flex-wrap">
+            <StepChip n={2} label="scenarios" />
             <ScenarioList />
           </div>
 
           {/* Step 3 — Compare */}
           <div>
-            <div className="mb-1 flex items-center justify-between">
-              <StepChip n={3} label="compare · check scenarios above to plot" />
+            <div className="mb-1 flex items-center justify-between flex-wrap gap-2">
+              <StepChip n={3} label="compare · check to plot" />
               <MetricsCards metrics={metrics} inputs={inputs} />
             </div>
             <ProjectionChart projections={projections} />

@@ -149,8 +149,14 @@ function CollapsibleSectionHeader({
 }
 
 export function InputPanel() {
-  const { inputs, setInputs, resetInputs } = useStore()
+  const { inputs, setInputs, resetInputs, saveScenario } = useStore()
   const [showProjectionSliders, setShowProjectionSliders] = useState(false)
+  const [scenarioName, setScenarioName] = useState('')
+
+  function handleSave() {
+    saveScenario(scenarioName.trim() || 'Unnamed')
+    setScenarioName('')
+  }
   const metrics = computeMetrics(inputs)
   const downTotal = totalDownPayment(inputs)
   const downPct = inputs.housePrice > 0 ? (downTotal / inputs.housePrice) * 100 : 0
@@ -308,6 +314,27 @@ export function InputPanel() {
           />
         </>
       )}
+
+      {/* Save scenario — bottom of sidebar */}
+      <div className="pt-3 mt-1 border-t border-gray-800 space-y-2">
+        <div className="text-xs text-gray-600">Save current inputs as a scenario</div>
+        <div className="flex gap-2">
+          <input
+            type="text"
+            placeholder="Scenario name…"
+            value={scenarioName}
+            onChange={(e) => setScenarioName(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && handleSave()}
+            className="flex-1 text-xs bg-gray-800 border border-gray-700 rounded px-2 py-1.5 text-white placeholder-gray-600"
+          />
+          <button
+            onClick={handleSave}
+            className="text-xs bg-blue-600 hover:bg-blue-500 text-white px-3 py-1.5 rounded whitespace-nowrap"
+          >
+            Save
+          </button>
+        </div>
+      </div>
     </div>
   )
 }
