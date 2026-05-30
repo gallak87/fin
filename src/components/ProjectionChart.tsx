@@ -12,13 +12,22 @@ import {
 } from 'recharts'
 import type { ScenarioProjection } from '../types'
 
-const COLORS = [
+const SCENARIO_COLORS = [
   '#3b82f6', // blue
   '#10b981', // emerald
   '#f59e0b', // amber
   '#ef4444', // red
   '#8b5cf6', // violet
   '#ec4899', // pink
+]
+
+// cool→warm gradient: buy now (blue) → wait 2yr (orange)
+const TIMING_COLORS = [
+  '#60a5fa', // buy now — blue
+  '#34d399', // +6mo — teal
+  '#a3e635', // +12mo — lime
+  '#fbbf24', // +18mo — amber
+  '#f97316', // +24mo — orange
 ]
 
 function fmtK(v: number) {
@@ -29,9 +38,11 @@ function fmtK(v: number) {
 
 interface Props {
   projections: ScenarioProjection[]
+  mode?: 'scenarios' | 'timing'
 }
 
-export function ProjectionChart({ projections }: Props) {
+export function ProjectionChart({ projections, mode = 'scenarios' }: Props) {
+  const COLORS = mode === 'timing' ? TIMING_COLORS : SCENARIO_COLORS
   if (projections.length === 0) {
     return (
       <div className="bg-gray-900 rounded-xl p-4 border border-gray-800 text-sm text-gray-500 text-center py-12">

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useStore } from './store'
-import { computeMetrics, projectNetWorth } from './lib/mortgage'
+import { computeMetrics, projectNetWorth, projectTimingBands } from './lib/mortgage'
 import { InputPanel } from './components/InputPanel'
 import { MetricsCards } from './components/MetricsCards'
 import { LifestyleGoalBar } from './components/LifestyleGoalBar'
@@ -25,11 +25,12 @@ export default function App() {
   const metrics = computeMetrics(inputs)
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [compareOpen, setCompareOpen] = useState(false)
+  const [chartMode, setChartMode] = useState<'scenarios' | 'timing'>('scenarios')
 
   const selectedScenarios = scenarios.filter((s) => selectedIds.includes(s.id))
-  const projections = projectNetWorth(
-    selectedScenarios.map((s) => ({ id: s.id, name: s.name, inputs: s.inputs })),
-  )
+  const projections = chartMode === 'timing'
+    ? projectTimingBands(inputs)
+    : projectNetWorth(selectedScenarios.map((s) => ({ id: s.id, name: s.name, inputs: s.inputs })))
 
   return (
     <div className="min-h-screen bg-gray-950 text-white">
@@ -89,8 +90,23 @@ export default function App() {
             <div className="mb-1 flex flex-wrap items-center gap-2">
               <StepLabel n={3} label="compare · check to plot" />
               <MetricsCards metrics={metrics} inputs={inputs} />
+              <div className="ml-auto flex gap-1">
+                {(['scenarios', 'timing'] as const).map((m) => (
+                  <button
+                    key={m}
+                    onClick={() => setChartMode(m)}
+                    className={`text-xs px-2.5 py-1 rounded border transition-colors ${
+                      chartMode === m
+                        ? 'bg-blue-600 border-blue-500 text-white'
+                        : 'border-gray-700 text-gray-400 hover:border-gray-500 hover:text-gray-200'
+                    }`}
+                  >
+                    {m === 'timing' ? 'timing bands' : 'scenarios'}
+                  </button>
+                ))}
+              </div>
             </div>
-            <ProjectionChart projections={projections} />
+            <ProjectionChart projections={projections} mode={chartMode} />
           </div>
 
           {/* Detail */}
