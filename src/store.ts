@@ -15,6 +15,7 @@ const DEFAULT_INPUTS: Inputs = {
   income1: 240_000,
   income2: 200_000,
   income2Active: false,
+  monthlyTakeHome: 15_000,
   discretionaryGoal: 3_000,
   annualAppreciation: 3.5,
   investmentReturn: 6.0,

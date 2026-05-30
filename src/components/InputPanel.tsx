@@ -266,6 +266,7 @@ export function InputPanel() {
       <SectionHeader label="Income" />
 
       <NumberInput label="Primary income" value={inputs.income1} onChange={(v) => setInputs({ income1: v })} />
+      <NumberInput label="Take-home pay /mo" value={inputs.monthlyTakeHome} onChange={(v) => setInputs({ monthlyTakeHome: v })} />
       <Toggle
         label="Secondary income active"
         checked={inputs.income2Active}

@@ -15,6 +15,7 @@ export interface Inputs {
   income1: number
   income2: number
   income2Active: boolean
+  monthlyTakeHome: number
   discretionaryGoal: number
   annualAppreciation: number
   investmentReturn: number

@@ -38,7 +38,7 @@ export function computeMetrics(inputs: Inputs): Metrics {
   const monthsOfReserve = monthlyExpenses > 0 ? cashReserve / monthlyExpenses : 0
 
   const opportunityCostAnnual = downPayment * (inputs.investmentReturn / 100)
-  const discretionaryMonthly = grossMonthlyIncome - monthlyPITI - inputs.monthlyNonHousingExpenses
+  const discretionaryMonthly = inputs.monthlyTakeHome - monthlyPITI - inputs.monthlyNonHousingExpenses
 
   const breakEvenYear = computeBreakEven(inputs, downPayment, loanAmount, monthlyPITI)
 
