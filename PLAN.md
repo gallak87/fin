@@ -8,33 +8,33 @@
 - [x] `src/store.ts` — Zustand store with localStorage persistence
 
 ## Phase 2 — Core UI (inputs + live metrics)
-- [ ] Mobile-first layout with `md:` breakpoints from the start
-- [ ] `InputPanel.tsx` — sliders, toggles, equity source list
-- [ ] `MetricsCards.tsx` — PITI, DTI, cash reserve, break-even with color coding
-- [ ] `LifestyleGoalBar.tsx` — discretionary budget gauge
-- [ ] `CashFlowBreakdown.tsx` — monthly cost table
-- [ ] `Tooltip.tsx` — wired to major decision points
+- [x] Mobile-first layout with `md:` breakpoints from the start
+- [x] `InputPanel.tsx` — sliders, toggles, equity source list
+- [x] `MetricsCards.tsx` — PITI, DTI, cash reserve, break-even with color coding
+- [x] `LifestyleGoalBar.tsx` — discretionary budget gauge
+- [x] `CashFlowBreakdown.tsx` — monthly cost table
+- [x] `Tooltip.tsx` — wired to major decision points
 
 ## Phase 3 — Projection Chart
-- [ ] `ProjectionChart.tsx` — 10-year net worth, multi-scenario overlay
-- [ ] Wire to selected scenario IDs in store
+- [x] `ProjectionChart.tsx` — delta chart (buy advantage over renting), multi-scenario overlay
+- [x] Wire to selected scenario IDs in store
 
 ## Phase 4 — Scenario Management
-- [ ] `ScenarioList.tsx` — save, name, load, delete (confirm dialog), multi-select
-- [ ] `CompareModal.tsx` — side-by-side table, highlight best/worst
-- [ ] localStorage round-trip verified
+- [x] `ScenarioList.tsx` — save, name, load, delete (confirm dialog), multi-select as pills
+- [x] `CompareModal.tsx` — side-by-side table, highlight best/worst
+- [x] localStorage round-trip verified
 
 ## Phase 5 — Responsive / Mobile
-- [ ] Two-column → single-column on mobile
-- [ ] Collapsible input drawer on small screens
-- [ ] Chart + cards readable at 375px
-- [ ] Compare modal horizontal scroll on mobile
+- [x] Two-column → single-column on mobile
+- [x] Collapsible input drawer on small screens
+- [x] Chart + cards readable at 375px
+- [x] Compare modal horizontal scroll on mobile
 
 ## Phase 6 — GitHub Repo + Pages Deploy
-- [ ] `gh repo create` → public repo
-- [ ] GitHub Actions: build on push to `main`, deploy to `gh-pages`
-- [ ] `vite.config.ts` base path set to repo name
-- [ ] Verify live URL on desktop + mobile
+- [x] `gh repo create` → public repo (gallak87/fin)
+- [x] GitHub Actions: build on push to `main`, deploy via actions/deploy-pages
+- [x] `vite.config.ts` base path set to `/fin/`
+- [ ] Verify live URL on desktop + mobile (pending Pages source → GitHub Actions switch)
 
 ## Phase 7 (Future) — Excel Export
 - [ ] Export scenario comparison to `.xlsx` with chart sheet
