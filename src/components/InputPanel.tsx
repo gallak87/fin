@@ -238,7 +238,15 @@ export function InputPanel() {
             {downPct.toFixed(1)}% (${fmt(downTotal)})
           </span>
         </div>
-        <NumberInput label="Liquid assets" value={inputs.liquidAssets} onChange={(v) => setInputs({ liquidAssets: v })} />
+        <SliderRow
+          label="Liquid assets"
+          value={inputs.liquidAssets}
+          min={50_000}
+          max={inputs.housePrice}
+          step={10_000}
+          onChange={(v) => setInputs({ liquidAssets: v })}
+          display={`$${fmt(inputs.liquidAssets)}`}
+        />
         <div className="text-xs text-gray-500 pl-1">+ Equity to include:</div>
         <div className="pl-1">
           <EquitySourceList />

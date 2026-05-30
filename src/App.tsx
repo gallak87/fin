@@ -9,10 +9,11 @@ import { ProjectionChart } from './components/ProjectionChart'
 import { ScenarioList } from './components/ScenarioList'
 import { CompareModal } from './components/CompareModal'
 
-function StepChip({ n, label }: { n: number; label: string }) {
+function StepLabel({ n, label }: { n: number; label: string }) {
   return (
-    <span className="inline-flex items-center gap-1.5 text-[11px] text-blue-300 bg-blue-950 border border-blue-800/50 rounded-full px-2.5 py-0.5 select-none font-medium">
-      <span className="text-blue-500 font-bold">{n}</span>
+    <span className="inline-flex items-center gap-1 text-[11px] text-gray-500 select-none uppercase tracking-wide">
+      <span className="text-gray-600 font-bold">{n}</span>
+      <span>·</span>
       <span>{label}</span>
     </span>
   )
@@ -64,7 +65,7 @@ export default function App() {
           `}
         >
           <div className="px-4 pt-3 pb-1 flex items-center justify-between">
-            <StepChip n={1} label="configure inputs" />
+            <StepLabel n={1} label="configure inputs" />
             <span className="text-[10px] text-amber-500/80 font-medium tracking-wide">
               editing: {activeScenario?.name ?? '—'}
             </span>
@@ -79,14 +80,14 @@ export default function App() {
 
           {/* Scenario pills strip */}
           <div className="flex items-center gap-2 flex-wrap">
-            <StepChip n={2} label="scenarios" />
+            <StepLabel n={2} label="scenarios" />
             <ScenarioList />
           </div>
 
           {/* Step 3 — Compare */}
           <div>
             <div className="mb-1 flex flex-wrap items-center gap-2">
-              <StepChip n={3} label="compare · check to plot" />
+              <StepLabel n={3} label="compare · check to plot" />
               <MetricsCards metrics={metrics} inputs={inputs} />
             </div>
             <ProjectionChart projections={projections} />

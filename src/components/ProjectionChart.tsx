@@ -5,8 +5,9 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
+  ReferenceLine,
   ResponsiveContainer,
-  Legend,
+  Label,
 } from 'recharts'
 import type { ScenarioProjection } from '../types'
 
@@ -43,21 +44,22 @@ export function ProjectionChart({ projections }: Props) {
     const row: Record<string, number | string> = { year }
     projections.forEach((proj, i) => {
       const pt = proj.points.find((p) => p.year === year)
-      if (pt) {
-        row[`buy_${i}`] = Math.round(pt.buyNetWorth)
-        row[`rent_${i}`] = Math.round(pt.rentNetWorth)
-      }
+      if (pt) row[`delta_${i}`] = Math.round(pt.buyNetWorth - pt.rentNetWorth)
     })
     return row
   })
 
+  // figure out if any scenario is ever below zero, for y-axis label placement
+  const allDeltas = projections.flatMap((proj) =>
+    proj.points.map((p) => p.buyNetWorth - p.rentNetWorth),
+  )
+  const hasNegative = allDeltas.some((d) => d < 0)
+
   return (
     <div className="bg-gray-800 rounded-xl p-2 border border-gray-700 space-y-2">
-      <div className="text-xs text-gray-600 text-right">solid = buy path · dashed = rent + invest path</div>
-
       <div className="h-[220px] sm:h-[340px]">
         <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={data} margin={{ top: 4, right: 12, left: 0, bottom: 0 }}>
+          <LineChart data={data} margin={{ top: 16, right: 16, left: 8, bottom: 20 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#1f2937" />
             <XAxis
               dataKey="year"
@@ -65,68 +67,73 @@ export function ProjectionChart({ projections }: Props) {
               tickFormatter={(v) => `Yr ${v}`}
               axisLine={{ stroke: '#374151' }}
               tickLine={false}
-            />
+            >
+              <Label value="years from now" offset={-8} position="insideBottom" style={{ fill: '#4b5563', fontSize: 10 }} />
+            </XAxis>
             <YAxis
               tick={{ fill: '#6b7280', fontSize: 11 }}
               tickFormatter={fmtK}
-              width={56}
+              width={60}
               axisLine={false}
               tickLine={false}
+            >
+              <Label
+                value="buying advantage ($)"
+                angle={-90}
+                position="insideLeft"
+                offset={12}
+                style={{ fill: '#4b5563', fontSize: 10, textAnchor: 'middle' }}
+              />
+            </YAxis>
+            <ReferenceLine
+              y={0}
+              stroke="#6b7280"
+              strokeWidth={1.5}
+              strokeDasharray="4 3"
+              label={{
+                value: hasNegative ? '← renting wins | buying wins →' : 'break-even',
+                position: 'insideTopLeft',
+                fill: '#6b7280',
+                fontSize: 10,
+                dy: -4,
+              }}
             />
             <Tooltip
               contentStyle={{ background: '#111827', border: '1px solid #374151', borderRadius: 8, fontSize: 12 }}
               labelStyle={{ color: '#6b7280', marginBottom: 6 }}
               labelFormatter={(v) => `Year ${v}`}
               formatter={(value, name) => {
-                const parts = String(name ?? '').split('_')
-                const type = parts[0]
-                const idx = Number(parts[1])
+                const idx = Number(String(name ?? '').split('_')[1])
                 const proj = projections[idx]
-                return [fmtK(Number(value)), `${proj?.name ?? ''} · ${type === 'buy' ? 'buy' : 'rent & invest'}`]
-              }}
-            />
-            <Legend
-              wrapperStyle={{ paddingTop: 8 }}
-              formatter={(value) => {
-                const parts = String(value).split('_')
-                const type = parts[0]
-                const idx = Number(parts[1])
-                const proj = projections[idx]
-                return (
-                  <span style={{ color: '#9ca3af', fontSize: 11 }}>
-                    {proj?.name ?? ''} · {type === 'buy' ? 'buy' : 'rent & invest'}
-                  </span>
-                )
+                const v = Number(value)
+                const msg = v >= 0
+                  ? `buying puts you ${fmtK(v)} ahead`
+                  : `renting puts you ${fmtK(Math.abs(v))} ahead`
+                return [msg, proj?.name ?? '']
               }}
             />
             {projections.map((_proj, i) => (
-              <>
-                <Line
-                  key={`buy_${i}`}
-                  type="monotone"
-                  dataKey={`buy_${i}`}
-                  stroke={COLORS[i % COLORS.length]}
-                  strokeWidth={2.5}
-                  dot={false}
-                  activeDot={{ r: 4 }}
-                  legendType="line"
-                />
-                <Line
-                  key={`rent_${i}`}
-                  type="monotone"
-                  dataKey={`rent_${i}`}
-                  stroke={COLORS[i % COLORS.length]}
-                  strokeWidth={1.5}
-                  strokeDasharray="5 4"
-                  dot={false}
-                  activeDot={{ r: 3 }}
-                  legendType="line"
-                  opacity={0.6}
-                />
-              </>
+              <Line
+                key={`delta_${i}`}
+                type="monotone"
+                dataKey={`delta_${i}`}
+                stroke={COLORS[i % COLORS.length]}
+                strokeWidth={2.5}
+                dot={false}
+                activeDot={{ r: 4 }}
+              />
             ))}
           </LineChart>
         </ResponsiveContainer>
+      </div>
+
+      <div className="flex flex-wrap gap-x-4 gap-y-1 pt-1 border-t border-gray-700/50">
+        {projections.map((proj, i) => (
+          <div key={proj.scenarioId} className="flex items-center gap-1.5">
+            <span className="inline-block w-4 h-0.5 rounded" style={{ backgroundColor: COLORS[i % COLORS.length] }} />
+            <span className="text-xs text-gray-400">{proj.name}</span>
+          </div>
+        ))}
       </div>
     </div>
   )
