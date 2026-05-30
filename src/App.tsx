@@ -79,18 +79,17 @@ export default function App() {
 
           {/* Step 3 — Compare */}
           <div>
-            <div className="mb-1"><StepChip n={3} label="compare · check scenarios above to plot" /></div>
+            <div className="mb-1 flex items-center justify-between">
+              <StepChip n={3} label="compare · check scenarios above to plot" />
+              <MetricsCards metrics={metrics} inputs={inputs} />
+            </div>
             <ProjectionChart projections={projections} />
           </div>
 
-          {/* Step 4 — Stats */}
-          <div>
-            <div className="mb-1"><StepChip n={4} label="current scenario stats" /></div>
-            <div className="space-y-2">
-              <MetricsCards metrics={metrics} inputs={inputs} />
-              <LifestyleGoalBar metrics={metrics} inputs={inputs} />
-              <CashFlowBreakdown metrics={metrics} inputs={inputs} />
-            </div>
+          {/* Detail */}
+          <div className="space-y-2 pt-1">
+            <LifestyleGoalBar metrics={metrics} inputs={inputs} />
+            <CashFlowBreakdown metrics={metrics} inputs={inputs} />
           </div>
 
         </main>
