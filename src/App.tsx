@@ -54,11 +54,11 @@ export default function App() {
         </aside>
 
         <main className="flex-1 p-4 space-y-4 overflow-y-auto">
+          <ProjectionChart projections={projections} />
+          <ScenarioList />
           <MetricsCards metrics={metrics} inputs={inputs} />
           <LifestyleGoalBar metrics={metrics} inputs={inputs} />
           <CashFlowBreakdown metrics={metrics} inputs={inputs} />
-          <ProjectionChart projections={projections} />
-          <ScenarioList />
         </main>
       </div>
 

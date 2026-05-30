@@ -14,7 +14,10 @@ export function ScenarioList() {
 
   return (
     <div className="bg-gray-800 rounded-xl p-3 border border-gray-700 space-y-3">
-      <div className="text-xs text-gray-500 uppercase tracking-wide">Scenarios</div>
+      <div className="flex items-center justify-between">
+        <div className="text-xs text-gray-500 uppercase tracking-wide">Scenarios</div>
+        <div className="text-xs text-gray-600">check to overlay on chart</div>
+      </div>
 
       {/* Save current as scenario */}
       <div className="flex gap-2">

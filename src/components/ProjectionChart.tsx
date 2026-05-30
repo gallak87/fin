@@ -5,7 +5,6 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
-  Legend,
   ResponsiveContainer,
 } from 'recharts'
 import type { ScenarioProjection } from '../types'
@@ -53,39 +52,39 @@ export function ProjectionChart({ projections }: Props) {
   })
 
   return (
-    <div className="bg-gray-800 rounded-xl p-3 border border-gray-700 space-y-2">
-      <div className="text-xs text-gray-500 uppercase tracking-wide">10-Year Net Worth Projection</div>
-      <ResponsiveContainer width="100%" height={260}>
-        <LineChart data={data} margin={{ top: 4, right: 8, left: 0, bottom: 0 }}>
-          <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+    <div className="bg-gray-800 rounded-xl p-4 border border-gray-700 space-y-3">
+      <div className="flex items-center justify-between">
+        <div className="text-xs text-gray-500 uppercase tracking-wide">10-Year Net Worth Projection</div>
+        <div className="text-xs text-gray-600">── buy &nbsp;&nbsp; ╌╌ rent + invest</div>
+      </div>
+
+      <ResponsiveContainer width="100%" height={340}>
+        <LineChart data={data} margin={{ top: 4, right: 12, left: 0, bottom: 0 }}>
+          <CartesianGrid strokeDasharray="3 3" stroke="#1f2937" />
           <XAxis
             dataKey="year"
-            tick={{ fill: '#9ca3af', fontSize: 11 }}
+            tick={{ fill: '#6b7280', fontSize: 11 }}
             tickFormatter={(v) => `Yr ${v}`}
+            axisLine={{ stroke: '#374151' }}
+            tickLine={false}
           />
           <YAxis
-            tick={{ fill: '#9ca3af', fontSize: 11 }}
+            tick={{ fill: '#6b7280', fontSize: 11 }}
             tickFormatter={fmtK}
             width={56}
+            axisLine={false}
+            tickLine={false}
           />
           <Tooltip
-            contentStyle={{ background: '#1f2937', border: '1px solid #374151', borderRadius: 8 }}
-            labelStyle={{ color: '#9ca3af' }}
+            contentStyle={{ background: '#111827', border: '1px solid #374151', borderRadius: 8, fontSize: 12 }}
+            labelStyle={{ color: '#6b7280', marginBottom: 4 }}
             labelFormatter={(v) => `Year ${v}`}
             formatter={(value, name) => {
               const nameStr = String(name ?? '')
               const [type, idx] = nameStr.split('_')
               const p = projections[Number(idx)]
-              return [fmtK(Number(value)), `${p?.name ?? ''} (${type === 'buy' ? 'buy' : 'rent'})`]
+              return [fmtK(Number(value)), `${p?.name ?? ''} — ${type === 'buy' ? 'buy' : 'rent'}`]
             }}
-          />
-          <Legend
-            formatter={(value: string) => {
-              const [type, idx] = value.split('_')
-              const p = projections[Number(idx)]
-              return `${p?.name ?? ''} (${type === 'buy' ? 'buy' : 'rent'})`
-            }}
-            wrapperStyle={{ fontSize: 11, color: '#9ca3af' }}
           />
           {projections.map((_proj, i) => [
             <Line
@@ -93,22 +92,37 @@ export function ProjectionChart({ projections }: Props) {
               type="monotone"
               dataKey={`buy_${i}`}
               stroke={COLORS[i % COLORS.length]}
-              strokeWidth={2}
+              strokeWidth={2.5}
               dot={false}
+              activeDot={{ r: 4 }}
             />,
             <Line
               key={`rent_${i}`}
               type="monotone"
               dataKey={`rent_${i}`}
               stroke={COLORS[i % COLORS.length]}
-              strokeWidth={2}
-              strokeDasharray="5 3"
+              strokeWidth={1.5}
+              strokeDasharray="5 4"
               dot={false}
+              activeDot={{ r: 3 }}
+              opacity={0.6}
             />,
           ])}
         </LineChart>
       </ResponsiveContainer>
-      <div className="text-xs text-gray-600">Solid = buy path · Dashed = rent + invest path</div>
+
+      {/* Custom legend — one row per scenario */}
+      <div className="flex flex-wrap gap-x-4 gap-y-1 pt-1 border-t border-gray-700/50">
+        {projections.map((proj, i) => (
+          <div key={proj.scenarioId} className="flex items-center gap-1.5">
+            <span
+              className="inline-block w-4 h-0.5 rounded"
+              style={{ backgroundColor: COLORS[i % COLORS.length] }}
+            />
+            <span className="text-xs text-gray-400">{proj.name}</span>
+          </div>
+        ))}
+      </div>
     </div>
   )
 }

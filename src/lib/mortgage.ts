@@ -67,7 +67,6 @@ function computeBreakEven(
   monthlyPITI: number,
 ): number | null {
   const monthlyRate = inputs.mortgageRate / 100 / 12
-  const n = inputs.loanTermYears * 12
   let balance = loanAmount
 
   let cumulativeBuyCost = downPayment

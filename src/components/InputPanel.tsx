@@ -69,7 +69,7 @@ function NumberInput({
   return (
     <div className="grid items-center gap-1" style={{ gridTemplateColumns: '1fr 1rem 6rem' }}>
       <div className="flex items-center gap-1 min-w-0">
-        <span className="text-xs text-gray-400 truncate">{label}</span>
+        <span className="text-xs text-gray-400 truncate" title={label}>{label}</span>
         {tooltip && (
           <Tooltip content={tooltip}>
             <span className="text-gray-600 hover:text-gray-400 text-xs shrink-0">ℹ</span>
