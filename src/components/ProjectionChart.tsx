@@ -5,6 +5,7 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
+  ReferenceLine,
   ResponsiveContainer,
 } from 'recharts'
 import type { ScenarioProjection } from '../types'
@@ -31,22 +32,18 @@ interface Props {
 export function ProjectionChart({ projections }: Props) {
   if (projections.length === 0) {
     return (
-      <div className="bg-gray-800 rounded-xl p-3 border border-gray-700 text-xs text-gray-500 text-center py-8">
+      <div className="bg-gray-800 rounded-xl p-4 border border-gray-700 text-xs text-gray-500 text-center py-12">
         Save and select scenarios to see projections
       </div>
     )
   }
 
-  // Merge all projections into chart data keyed by year
   const years = projections[0].points.map((p) => p.year)
   const data = years.map((year) => {
     const row: Record<string, number | string> = { year }
     projections.forEach((proj, i) => {
       const pt = proj.points.find((p) => p.year === year)
-      if (pt) {
-        row[`buy_${i}`] = Math.round(pt.buyNetWorth)
-        row[`rent_${i}`] = Math.round(pt.rentNetWorth)
-      }
+      if (pt) row[`delta_${i}`] = Math.round(pt.buyNetWorth - pt.rentNetWorth)
     })
     return row
   })
@@ -54,8 +51,8 @@ export function ProjectionChart({ projections }: Props) {
   return (
     <div className="bg-gray-800 rounded-xl p-4 border border-gray-700 space-y-3">
       <div className="flex items-center justify-between">
-        <div className="text-xs text-gray-500 uppercase tracking-wide">10-Year Net Worth Projection</div>
-        <div className="text-xs text-gray-600">── buy &nbsp;&nbsp; ╌╌ rent + invest</div>
+        <div className="text-xs text-gray-500 uppercase tracking-wide">Buying advantage over renting</div>
+        <div className="text-xs text-gray-600">above $0 = buying wins · below = renting wins</div>
       </div>
 
       <ResponsiveContainer width="100%" height={340}>
@@ -75,50 +72,44 @@ export function ProjectionChart({ projections }: Props) {
             axisLine={false}
             tickLine={false}
           />
+          <ReferenceLine
+            y={0}
+            stroke="#4b5563"
+            strokeWidth={1.5}
+            label={{ value: 'break-even', position: 'insideTopLeft', fill: '#6b7280', fontSize: 10 }}
+          />
           <Tooltip
             contentStyle={{ background: '#111827', border: '1px solid #374151', borderRadius: 8, fontSize: 12 }}
-            labelStyle={{ color: '#6b7280', marginBottom: 4 }}
+            labelStyle={{ color: '#6b7280', marginBottom: 6 }}
             labelFormatter={(v) => `Year ${v}`}
             formatter={(value, name) => {
-              const nameStr = String(name ?? '')
-              const [type, idx] = nameStr.split('_')
-              const p = projections[Number(idx)]
-              return [fmtK(Number(value)), `${p?.name ?? ''} — ${type === 'buy' ? 'buy' : 'rent'}`]
+              const idx = Number(String(name ?? '').split('_')[1])
+              const p = projections[idx]
+              const v = Number(value)
+              const label = v >= 0
+                ? `buying puts you ${fmtK(v)} ahead`
+                : `renting puts you ${fmtK(Math.abs(v))} ahead`
+              return [label, p?.name ?? '']
             }}
           />
-          {projections.map((_proj, i) => [
+          {projections.map((_proj, i) => (
             <Line
-              key={`buy_${i}`}
+              key={`delta_${i}`}
               type="monotone"
-              dataKey={`buy_${i}`}
+              dataKey={`delta_${i}`}
               stroke={COLORS[i % COLORS.length]}
               strokeWidth={2.5}
               dot={false}
               activeDot={{ r: 4 }}
-            />,
-            <Line
-              key={`rent_${i}`}
-              type="monotone"
-              dataKey={`rent_${i}`}
-              stroke={COLORS[i % COLORS.length]}
-              strokeWidth={1.5}
-              strokeDasharray="5 4"
-              dot={false}
-              activeDot={{ r: 3 }}
-              opacity={0.6}
-            />,
-          ])}
+            />
+          ))}
         </LineChart>
       </ResponsiveContainer>
 
-      {/* Custom legend — one row per scenario */}
       <div className="flex flex-wrap gap-x-4 gap-y-1 pt-1 border-t border-gray-700/50">
         {projections.map((proj, i) => (
           <div key={proj.scenarioId} className="flex items-center gap-1.5">
-            <span
-              className="inline-block w-4 h-0.5 rounded"
-              style={{ backgroundColor: COLORS[i % COLORS.length] }}
-            />
+            <span className="inline-block w-4 h-0.5 rounded" style={{ backgroundColor: COLORS[i % COLORS.length] }} />
             <span className="text-xs text-gray-400">{proj.name}</span>
           </div>
         ))}
