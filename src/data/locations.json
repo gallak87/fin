@@ -1,0 +1,152 @@
+{
+  "_meta": {
+    "source": "Zillow Research public CSVs, pulled 2026-05-31",
+    "generatedBy": "npm run data:pull",
+    "homePrice": "ZHVI 4+ bedroom (mean of 4BR and 5BR+ typical values), city level, last month of each year + latest available",
+    "sfhRent": "DERIVED, NOT MEASURED — medianHomePrice / 26 / 12, rounded to $50. Editable default.",
+    "zoriBlended": "Raw Zillow ZORI — blends apartments+condos+SFH, understates single-family rent. Reference floor only.",
+    "schoolRating": "HAND-SET PLACEHOLDER — verify against GreatSchools before shipping"
+  },
+  "locations": [
+    {
+      "id": "kirkland",
+      "city": "Kirkland",
+      "district": "Lake Washington SD",
+      "schoolRating": 8,
+      "years": {
+        "2023": {
+          "medianHomePrice": 1806289,
+          "sfhRent": 5800,
+          "zoriBlended": 2376
+        },
+        "2024": {
+          "medianHomePrice": 1988942,
+          "sfhRent": 6350,
+          "zoriBlended": 2449
+        },
+        "2025": {
+          "medianHomePrice": 1943495,
+          "sfhRent": 6250,
+          "zoriBlended": 2482
+        },
+        "2026": {
+          "medianHomePrice": 1903461,
+          "sfhRent": 6100,
+          "zoriBlended": 2575
+        }
+      }
+    },
+    {
+      "id": "redmond",
+      "city": "Redmond",
+      "district": "Lake Washington SD",
+      "schoolRating": 8,
+      "years": {
+        "2023": {
+          "medianHomePrice": 1809794,
+          "sfhRent": 5800,
+          "zoriBlended": 2282
+        },
+        "2024": {
+          "medianHomePrice": 2000435,
+          "sfhRent": 6400,
+          "zoriBlended": 2361
+        },
+        "2025": {
+          "medianHomePrice": 1972599,
+          "sfhRent": 6300,
+          "zoriBlended": 2370
+        },
+        "2026": {
+          "medianHomePrice": 1944140,
+          "sfhRent": 6250,
+          "zoriBlended": 2458
+        }
+      }
+    },
+    {
+      "id": "bellevue",
+      "city": "Bellevue",
+      "district": "Bellevue SD",
+      "schoolRating": 8,
+      "years": {
+        "2023": {
+          "medianHomePrice": 1932651,
+          "sfhRent": 6200,
+          "zoriBlended": 2456
+        },
+        "2024": {
+          "medianHomePrice": 2133208,
+          "sfhRent": 6850,
+          "zoriBlended": 2588
+        },
+        "2025": {
+          "medianHomePrice": 2110167,
+          "sfhRent": 6750,
+          "zoriBlended": 2600
+        },
+        "2026": {
+          "medianHomePrice": 2084854,
+          "sfhRent": 6700,
+          "zoriBlended": 2688
+        }
+      }
+    },
+    {
+      "id": "woodinville",
+      "city": "Woodinville",
+      "district": "Northshore SD",
+      "schoolRating": 8,
+      "years": {
+        "2023": {
+          "medianHomePrice": 1606077,
+          "sfhRent": 5150,
+          "zoriBlended": 2281
+        },
+        "2024": {
+          "medianHomePrice": 1757781,
+          "sfhRent": 5650,
+          "zoriBlended": 2370
+        },
+        "2025": {
+          "medianHomePrice": 1755023,
+          "sfhRent": 5650,
+          "zoriBlended": 2359
+        },
+        "2026": {
+          "medianHomePrice": 1728238,
+          "sfhRent": 5550,
+          "zoriBlended": 2421
+        }
+      }
+    },
+    {
+      "id": "sammamish",
+      "city": "Sammamish",
+      "district": "Issaquah / Lake Washington SD",
+      "schoolRating": 9,
+      "years": {
+        "2023": {
+          "medianHomePrice": 1869836,
+          "sfhRent": 6000,
+          "zoriBlended": 2994
+        },
+        "2024": {
+          "medianHomePrice": 2056472,
+          "sfhRent": 6600,
+          "zoriBlended": 3202
+        },
+        "2025": {
+          "medianHomePrice": 2009285,
+          "sfhRent": 6450,
+          "zoriBlended": 3207
+        },
+        "2026": {
+          "medianHomePrice": 1972207,
+          "sfhRent": 6300,
+          "zoriBlended": 3300
+        }
+      }
+    }
+  ]
+}

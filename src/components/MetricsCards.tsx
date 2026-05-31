@@ -45,7 +45,6 @@ export function MetricsCards({ metrics }: Props) {
   const dtiColor = metrics.frontEndDTI < 28 ? 'green' : metrics.frontEndDTI < 36 ? 'yellow' : 'red'
   const cashColor = metrics.monthsOfReserve > 6 ? 'green' : metrics.monthsOfReserve > 3 ? 'yellow' : 'red'
   const downColor = metrics.downPaymentPct >= 30 ? 'green' : metrics.downPaymentPct >= 20 ? 'yellow' : 'red'
-  const breakEvenColor = metrics.breakEvenYear !== null && metrics.breakEvenYear <= 7 ? 'green' : metrics.breakEvenYear !== null && metrics.breakEvenYear <= 12 ? 'yellow' : 'red'
 
   return (
     <div className="flex flex-wrap gap-2">
@@ -102,20 +101,6 @@ export function MetricsCards({ metrics }: Props) {
             <div className="text-green-400 mt-1">30–50% — strong equity cushion</div>
             <div className="text-yellow-400">20–29% — avoids PMI</div>
             <div className="text-red-400">{'< 20%'} — PMI territory, lender scrutiny</div>
-          </div>
-        }
-      />
-      <Pill
-        label="Break-even"
-        value={metrics.breakEvenYear !== null ? `Yr ${metrics.breakEvenYear}` : '>30yr'}
-        color={breakEvenColor}
-        tooltip={
-          <div className="space-y-1">
-            <div className="font-semibold">Break-even vs Renting</div>
-            <div>The year when buying puts you financially ahead of renting + investing the down payment. Matches the chart crossover.</div>
-            <div className="text-green-400 mt-1">{'≤ 7 years'} — strong case to buy</div>
-            <div className="text-yellow-400">8–12 years — depends on how long you stay</div>
-            <div className="text-red-400">{'> 12 years'} — renting likely wins unless you plan to stay long-term</div>
           </div>
         }
       />

@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import type { Metrics, Inputs } from '../types'
+import { monthlyRent } from '../lib/compare'
 
 function fmt(n: number) {
   return n.toLocaleString('en-US', { maximumFractionDigits: 0 })
@@ -12,7 +13,8 @@ interface Props {
 
 export function CashFlowBreakdown({ metrics, inputs }: Props) {
   const [open, setOpen] = useState(false)
-  const delta = metrics.monthlyPITI - inputs.currentRent
+  const rent = monthlyRent(inputs)
+  const delta = metrics.monthlyPITI - rent
 
   const rows = [
     { label: 'Principal & Interest', value: metrics.monthlyPI },
@@ -51,24 +53,12 @@ export function CashFlowBreakdown({ metrics, inputs }: Props) {
               <span className="font-mono text-white">${fmt(metrics.monthlyPITI)}</span>
             </div>
             <div className="flex justify-between text-xs lg:text-sm text-gray-400 pt-0.5">
-              <span>vs current rent</span>
-              <span className="font-mono">${fmt(inputs.currentRent)}</span>
+              <span>vs equivalent rent</span>
+              <span className="font-mono">${fmt(rent)}</span>
             </div>
             <div className={`flex justify-between text-xs lg:text-sm font-semibold ${delta > 0 ? 'text-yellow-400' : 'text-green-400'}`}>
               <span>Delta</span>
               <span className="font-mono">{delta > 0 ? '+' : ''}{fmt(delta)}/mo</span>
-            </div>
-          </div>
-          <div className="pt-2 border-t border-gray-800 space-y-1.5">
-            <div className="flex justify-between text-xs lg:text-sm text-gray-400">
-              <span>Break-even vs renting</span>
-              <span className="font-mono text-white">
-                {metrics.breakEvenYear !== null ? `Year ${metrics.breakEvenYear}` : '> 30 years'}
-              </span>
-            </div>
-            <div className="flex justify-between text-xs lg:text-sm text-gray-400">
-              <span>Opportunity cost /yr</span>
-              <span className="font-mono text-white">${fmt(metrics.opportunityCostAnnual)}</span>
             </div>
           </div>
         </div>

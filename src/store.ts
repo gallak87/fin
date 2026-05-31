@@ -1,133 +1,142 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import type { Inputs, Scenario } from './types'
+import type { Inputs } from './types'
+import { medianPrice } from './lib/compare'
 
-export const BASE_SCENARIO_ID = 'base'
+const DEFAULT_FOCUS = 'woodinville'
+const DEFAULT_PRICE = 1_100_000
 
 const DEFAULT_INPUTS: Inputs = {
-  housePrice: 1_450_000,
+  locationId: DEFAULT_FOCUS,
+  housePrice: DEFAULT_PRICE,
+
   totalLiquidAssets: 800_000,
   liquidDownPayment: 600_000,
   equitySources: [
     { id: 'tn', name: 'TN House', amount: 204_000, include: false },
     { id: 'sea', name: 'Seattle Condo', amount: 270_000, include: false },
   ],
-  mortgageRate: 7.0,
-  loanTermYears: 30,
-  propertyTaxRate: 1.1,
   income1: 240_000,
   income2: 200_000,
   income2Active: false,
+  holdingPeriodYears: 10,
+
+  mortgageRate: 7.0,
+  loanTermYears: 30,
+
+  propertyTaxRate: 0.9,
+  insuranceRate: 0.4,
+  maintenanceRate: 1.0,
+  closingCostPct: 2.0,
+  sellingCostPct: 7.0,
+  pmiRate: 0.6,
   effectiveTaxRate: 28,
-  discretionaryGoal: 3_000,
+  taxRateOverride: false,
+
+  rentToPriceRatio: 26,
+  rentGrowth: 3.5,
+
   annualAppreciation: 3.5,
   investmentReturn: 6.0,
-  currentRent: 3_550,
-  monthlyNonHousingExpenses: 4_000,
-}
 
-const BASE_SCENARIO: Scenario = {
-  id: BASE_SCENARIO_ID,
-  name: 'base',
-  inputs: DEFAULT_INPUTS,
-  createdAt: 0,
+  monthlyNonHousingExpenses: 4_000,
+  discretionaryGoal: 3_000,
 }
 
 interface Store {
   inputs: Inputs
-  scenarios: Scenario[]
-  selectedIds: string[]
-  activeScenarioId: string
+  selectedLocations: string[]
+  focusedLocation: string
+  cityPrice: Record<string, number>
+  priceOffsets: number[]
   setInputs: (patch: Partial<Inputs>) => void
+  tapLocation: (id: string) => void
+  setFocusedPrice: (price: number) => void
+  toggleOffset: (offset: number) => void
   resetInputs: () => void
-  loadScenario: (id: string) => void
-  saveScenario: (name: string) => void
-  deleteScenario: (id: string) => void
-  toggleSelected: (id: string) => void
+}
+
+/** Keep inputs.housePrice / locationId mirrored to the focused city. */
+function syncFocus(s: Store): Partial<Store> {
+  const price = s.cityPrice[s.focusedLocation] ?? medianPrice(s.focusedLocation)
+  return { inputs: { ...s.inputs, locationId: s.focusedLocation, housePrice: price } }
 }
 
 export const useStore = create<Store>()(
   persist(
-    (set, get) => ({
+    (set) => ({
       inputs: DEFAULT_INPUTS,
-      scenarios: [BASE_SCENARIO],
-      selectedIds: [],
-      activeScenarioId: BASE_SCENARIO_ID,
+      selectedLocations: [DEFAULT_FOCUS],
+      focusedLocation: DEFAULT_FOCUS,
+      cityPrice: { [DEFAULT_FOCUS]: DEFAULT_PRICE },
+      priceOffsets: [0],
 
-      // auto-save edits back into the active scenario
-      setInputs: (patch) =>
+      setInputs: (patch) => set((s) => ({ inputs: { ...s.inputs, ...patch } })),
+
+      // tap unselected → select+focus; tap selected non-focused → focus;
+      // tap focused → deselect (focus shifts to another selected city)
+      tapLocation: (id) =>
+        set((s) => {
+          const selected = s.selectedLocations.includes(id)
+          if (!selected) {
+            const cityPrice = { ...s.cityPrice }
+            if (cityPrice[id] == null) cityPrice[id] = medianPrice(id)
+            const next = { ...s, selectedLocations: [...s.selectedLocations, id], focusedLocation: id, cityPrice }
+            return { selectedLocations: next.selectedLocations, focusedLocation: id, cityPrice, ...syncFocus(next) }
+          }
+          if (s.focusedLocation !== id) {
+            return { focusedLocation: id, ...syncFocus({ ...s, focusedLocation: id }) }
+          }
+          // deselect focused (keep at least one selected)
+          const remaining = s.selectedLocations.filter((x) => x !== id)
+          if (remaining.length === 0) return {}
+          const nextFocus = remaining[0]
+          return {
+            selectedLocations: remaining,
+            focusedLocation: nextFocus,
+            ...syncFocus({ ...s, focusedLocation: nextFocus }),
+          }
+        }),
+
+      setFocusedPrice: (price) =>
         set((s) => ({
-          inputs: { ...s.inputs, ...patch },
-          scenarios: s.scenarios.map((sc) =>
-            sc.id === s.activeScenarioId
-              ? { ...sc, inputs: { ...sc.inputs, ...patch } }
-              : sc,
-          ),
+          cityPrice: { ...s.cityPrice, [s.focusedLocation]: price },
+          inputs: { ...s.inputs, housePrice: price },
         })),
+
+      toggleOffset: (offset) =>
+        set((s) => {
+          if (offset === 0) return {} // median line is always on
+          return {
+            priceOffsets: s.priceOffsets.includes(offset)
+              ? s.priceOffsets.filter((o) => o !== offset)
+              : [...s.priceOffsets, offset],
+          }
+        }),
 
       resetInputs: () =>
-        set((s) => ({
+        set({
           inputs: DEFAULT_INPUTS,
-          scenarios: s.scenarios.map((sc) =>
-            sc.id === s.activeScenarioId ? { ...sc, inputs: DEFAULT_INPUTS } : sc,
-          ),
-        })),
-
-      loadScenario: (id) => {
-        const scenario = get().scenarios.find((s) => s.id === id)
-        if (scenario) set({ inputs: { ...scenario.inputs }, activeScenarioId: id })
-      },
-
-      // fork current inputs as a new named scenario and switch to it
-      saveScenario: (name) => {
-        const id = crypto.randomUUID()
-        const scenario: Scenario = {
-          id,
-          name: name.trim() || 'Unnamed',
-          inputs: { ...get().inputs, equitySources: get().inputs.equitySources.map((s) => ({ ...s })) },
-          createdAt: Date.now(),
-        }
-        set((s) => ({ scenarios: [...s.scenarios, scenario], activeScenarioId: id }))
-      },
-
-      deleteScenario: (id) => {
-        if (id === BASE_SCENARIO_ID) return
-        set((s) => ({
-          scenarios: s.scenarios.filter((sc) => sc.id !== id),
-          selectedIds: s.selectedIds.filter((sid) => sid !== id),
-          activeScenarioId: s.activeScenarioId === id ? BASE_SCENARIO_ID : s.activeScenarioId,
-        }))
-        // if we just deleted the active scenario, load base
-        if (get().activeScenarioId === BASE_SCENARIO_ID) {
-          const base = get().scenarios.find((s) => s.id === BASE_SCENARIO_ID)
-          if (base) set({ inputs: { ...base.inputs } })
-        }
-      },
-
-      toggleSelected: (id) =>
-        set((s) => ({
-          selectedIds: s.selectedIds.includes(id)
-            ? s.selectedIds.filter((sid) => sid !== id)
-            : [...s.selectedIds, id],
-        })),
+          selectedLocations: [DEFAULT_FOCUS],
+          focusedLocation: DEFAULT_FOCUS,
+          cityPrice: { [DEFAULT_FOCUS]: DEFAULT_PRICE },
+          priceOffsets: [0],
+        }),
     }),
     {
-      name: 'home-planner',
+      name: 'rent-vs-buy',
+      version: 2,
+      migrate: () => undefined, // older shapes are incompatible — fall back to defaults
       merge: (persisted, current) => {
-        const ps = persisted as Partial<Store>
-        const raw = ps.scenarios ?? []
-        // migrate old scenarios missing new fields
-        const migrated = raw.map((sc) => ({
-          ...sc,
-          inputs: { ...DEFAULT_INPUTS, ...sc.inputs },
-        }))
-        const hasBase = migrated.some((s) => s.id === BASE_SCENARIO_ID)
+        const ps = (persisted ?? {}) as Partial<Store>
         return {
           ...current,
           ...ps,
           inputs: { ...DEFAULT_INPUTS, ...(ps.inputs ?? {}) },
-          scenarios: hasBase ? migrated : [BASE_SCENARIO, ...migrated],
-          activeScenarioId: ps.activeScenarioId ?? BASE_SCENARIO_ID,
+          selectedLocations: ps.selectedLocations ?? [DEFAULT_FOCUS],
+          focusedLocation: ps.focusedLocation ?? DEFAULT_FOCUS,
+          cityPrice: ps.cityPrice ?? { [DEFAULT_FOCUS]: DEFAULT_PRICE },
+          priceOffsets: ps.priceOffsets ?? [0],
         }
       },
     },
