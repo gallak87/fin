@@ -26,8 +26,12 @@ const TICKERS = [
   { sym: 'BTC-USD', ticker: 'BTC', name: 'Bitcoin / USD' },
 ]
 
-const URL_FOR = (sym) =>
-  `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(sym)}?range=max&interval=1d`
+// explicit period1/period2 — with range=max yahoo silently downgrades to monthly bars
+const URL_FOR = (sym) => {
+  const period1 = Math.floor(Date.parse(START_DATE) / 1000)
+  const period2 = Math.floor(Date.now() / 1000)
+  return `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(sym)}?period1=${period1}&period2=${period2}&interval=1d`
+}
 const OUT_DIR = join(dirname(fileURLToPath(import.meta.url)), '..', 'src', 'data', 'ohlc')
 
 // ── pull ────────────────────────────────────────────────────────────────
