@@ -1,5 +1,5 @@
 import type { Comparison, Inputs } from '../types'
-import { monthlyRent } from '../lib/compare'
+import { monthlyRent } from '../compare'
 
 function fmtMoney(n: number) {
   const abs = Math.abs(n)

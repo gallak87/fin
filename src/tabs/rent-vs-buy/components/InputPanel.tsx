@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useStore } from '../store'
 import { EquitySourceList } from './EquitySourceList'
-import { Tooltip } from './Tooltip'
+import { Tooltip } from '../../../components/Tooltip'
 import {
   LOCATIONS,
   totalDownPayment,
@@ -10,7 +10,7 @@ import {
   medianPrice,
   lineColor,
   PRICE_OFFSETS,
-} from '../lib/compare'
+} from '../compare'
 
 function fmt(n: number) {
   return n.toLocaleString('en-US', { maximumFractionDigits: 0 })

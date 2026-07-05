@@ -5,8 +5,8 @@ import type {
   Comparison,
   ComparisonSeries,
   Location,
-} from '../types'
-import locationsData from '../data/locations.json'
+} from './types'
+import locationsData from '../../data/locations.json'
 
 export const LOCATIONS = (locationsData.locations as Location[])
 

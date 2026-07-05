@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import type { Inputs } from './types'
-import { medianPrice } from './lib/compare'
+import { medianPrice } from './compare'
 
 const DEFAULT_FOCUS = 'woodinville'
 const DEFAULT_PRICE = 1_100_000

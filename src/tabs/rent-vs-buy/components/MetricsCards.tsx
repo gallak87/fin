@@ -1,5 +1,5 @@
 import type { Metrics, Inputs } from '../types'
-import { Tooltip } from './Tooltip'
+import { Tooltip } from '../../../components/Tooltip'
 
 function fmt(n: number, decimals = 0) {
   return n.toLocaleString('en-US', { maximumFractionDigits: decimals })

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import type { Metrics, Inputs } from '../types'
-import { monthlyRent } from '../lib/compare'
+import { monthlyRent } from '../compare'
 
 function fmt(n: number) {
   return n.toLocaleString('en-US', { maximumFractionDigits: 0 })
