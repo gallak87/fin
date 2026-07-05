@@ -1,0 +1,42 @@
+# Backtester Roadmap
+
+Direction: an experimentation lab, not a trading terminal. Optimize for "try an idea in under a minute and understand why it won or lost." Live execution is deliberately last.
+
+## Phase 1 — Tape player (done)
+
+Bar-by-bar replay, 4 canned strategies, metrics vs buy & hold, trade log.
+
+## Phase 2 — Strategy customization
+
+The current `Strategy` interface (init → signalAt/explainAt) already supports all of this; it's about authoring, not engine rewrites.
+
+- **Rule builder**: entry/exit as composable conditions instead of hardcoded strategies — `[indicator] [crosses above | crosses below | > | <] [indicator | value]`, AND/OR groups. MA cross and RSI become presets of the same builder, not special cases.
+- **More indicator blocks**: MACD, Bollinger bands, ATR, Donchian channel (breakout), rate-of-change, drawdown-from-peak. Each gets an overlay or strip rendering so the replay stays legible.
+- **Exits as first-class rules**: stop-loss %, trailing stop, take-profit, time-based exit (N bars). These change results more than entries do — good lesson to make visible.
+- **Position sizing**: all-in → fixed fraction, volatility-targeted (ATR-based). Adds the "how much" axis to the "when" axis.
+- **Friction**: per-trade fee + slippage bps setting. Default on, small — free trading flatters high-churn strategies.
+- **Custom JS strategy** (escape hatch): a code editor for `(bars, i, state) => signal` with the built-in indicators importable. Sandboxed via Function constructor; run on a worker if it gets slow.
+
+## Phase 3 — Robustness lab (the anti-overfitting phase)
+
+This is what separates a toy from a tool — every feature here answers "was that result luck?"
+
+- **Parameter sweep heatmap**: grid over 2 params (e.g. fast × slow) → CAGR/Sharpe/maxDD heatmap. If your winning combo is a lone bright pixel in a dark field, it's overfit. Engine is already fast enough to brute-force thousands of runs.
+- **Walk-forward split**: pick params on an in-sample window, replay shades the out-of-sample region so you watch the strategy meet data it never saw.
+- **Monte Carlo on trades**: bootstrap-resample the trade sequence → distribution of end equity and max drawdown, not a single path. "Median outcome" and "5th percentile" cards next to the point estimates.
+- **Multi-ticker scorecard**: run the current strategy across all tickers at once, small-multiples equity curves. A real edge survives asset changes; a curve-fit one doesn't.
+- **Richer analytics**: drawdown chart under the equity curve, per-trade MAE/MFE, holding-period and PnL histograms, exposure % (time in market).
+- **Regime shading**: bear-market bands on the price chart so you can see *where* the strategy earns its keep.
+
+## Phase 4 — Data expansion
+
+- More bundled tickers (sector ETFs, EFA/EEM for non-US, a failed-stock cautionary tale or two for survivorship honesty).
+- CSV upload → backtest anything (the column-JSON decode already isolates the format).
+- Weekly bars toggle (resample client-side) for slower strategies and longer effective history.
+- Portfolio mode: multiple tickers with target weights + rebalancing rules — turns the tool into an allocation tester (ties back to the rent-vs-buy "invest the difference" assumption).
+
+## Phase 5 — Toward real money (later, maybe)
+
+- Paper trading first: run a strategy forward on live daily closes, journal its signals, compare live vs backtest drift.
+- Alerts ("golden cross fired on SPY") via notification, no execution.
+- Broker API execution (Alpaca or IBKR) only after a strategy survives Phase 3 honestly + months of paper trading.
