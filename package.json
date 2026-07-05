@@ -8,9 +8,11 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "data:pull": "node scripts/pull-zillow.mjs"
+    "data:pull": "node scripts/pull-zillow.mjs",
+    "data:ohlc": "node scripts/pull-stooq.mjs"
   },
   "dependencies": {
+    "lightweight-charts": "^5.2.0",
     "react": "^19.2.6",
     "react-dom": "^19.2.6",
     "recharts": "^3.8.1",
