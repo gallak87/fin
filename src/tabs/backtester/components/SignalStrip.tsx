@@ -3,15 +3,22 @@ import { fmtMoney } from '../../../lib/format'
 
 /** One-row "what is the strategy doing right now" readout. */
 export function SignalStrip({ result, cursor }: { result: BacktestResult; cursor: number }) {
-  const { bars, equity, position, run, contributed } = result
+  const { bars, equity, position, run, contributed, gate, warmup } = result
   const bar = bars[cursor]
   const long = position[cursor] === 'long'
 
   const prevClose = cursor > 0 ? bars[cursor - 1].c : bar.o
   const dayChange = bar.c / prevClose - 1
 
-  const basis = contributed ? contributed[cursor] : equity[run.warmup]
+  const basis = contributed ? contributed[cursor] : equity[warmup]
   const gain = basis > 0 ? equity[cursor] / basis - 1 : 0
+
+  // strategy wants long but the regime filter is blocking it — call that out
+  const gated =
+    !long && gate != null && run.signalAt(cursor) === 'long' && (gate[cursor] == null || bar.c <= gate[cursor]!)
+  const explain = gated
+    ? `${run.explainAt(cursor)} Regime filter blocks it — price below the MA.`
+    : run.explainAt(cursor)
 
   return (
     <div className="bg-gray-900 rounded-xl border border-gray-800 px-3 py-2 flex items-center gap-3 text-xs">
@@ -31,8 +38,8 @@ export function SignalStrip({ result, cursor }: { result: BacktestResult; cursor
         </span>
       </span>
 
-      <span className="flex-1 text-gray-400 truncate" title={run.explainAt(cursor)}>
-        {run.explainAt(cursor)}
+      <span className={`flex-1 truncate ${gated ? 'text-pink-400/80' : 'text-gray-400'}`} title={explain}>
+        {explain}
       </span>
 
       <span className="font-mono tabular-nums text-gray-200">

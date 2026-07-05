@@ -32,7 +32,7 @@ export function PriceChart({ result, cursor }: { result: BacktestResult; cursor:
       wickDownColor: '#ef4444',
       priceLineVisible: false,
     })
-    const overlays = result.run.overlays.map((o) =>
+    const overlays = result.overlays.map((o) =>
       chart.addSeries(LineSeries, {
         color: o.color,
         lineWidth: 1,
@@ -63,7 +63,7 @@ export function PriceChart({ result, cursor }: { result: BacktestResult; cursor:
   useEffect(() => {
     const candle = candleRef.current
     if (!chart || !candle) return
-    const { bars, trades, run } = result
+    const { bars, trades, overlays } = result
 
     const toCandle = (i: number) => ({
       time: toTime(bars[i].t),
@@ -79,12 +79,12 @@ export function PriceChart({ result, cursor }: { result: BacktestResult; cursor:
     if (prev !== -1 && cursor > prev && cursor - prev <= 50) {
       for (let i = prev + 1; i <= cursor; i++) {
         candle.update(toCandle(i))
-        overlayRefs.current.forEach((s, k) => s.update(toPoint(run.overlays[k].values, i)))
+        overlayRefs.current.forEach((s, k) => s.update(toPoint(overlays[k].values, i)))
       }
     } else if (cursor !== prev) {
       const idx = Array.from({ length: cursor + 1 }, (_, i) => i)
       candle.setData(idx.map(toCandle))
-      overlayRefs.current.forEach((s, k) => s.setData(idx.map((i) => toPoint(run.overlays[k].values, i))))
+      overlayRefs.current.forEach((s, k) => s.setData(idx.map((i) => toPoint(overlays[k].values, i))))
     }
     prevCursor.current = cursor
 

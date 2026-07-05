@@ -25,7 +25,7 @@ export function PlaybackBar() {
   usePlayback()
 
   if (!bars || !result) return null
-  const warmup = result.run.warmup
+  const warmup = result.warmup
   const date = bars[cursor]?.t ?? ''
 
   const btn =

@@ -10,11 +10,10 @@ Bar-by-bar replay, 4 canned strategies, metrics vs buy & hold, trade log.
 
 The current `Strategy` interface (init → signalAt/explainAt) already supports all of this; it's about authoring, not engine rewrites.
 
-- **Rule builder**: entry/exit as composable conditions instead of hardcoded strategies — `[indicator] [crosses above | crosses below | > | <] [indicator | value]`, AND/OR groups. MA cross and RSI become presets of the same builder, not special cases.
 - **More indicator blocks**: MACD, Bollinger bands, ATR, Donchian channel (breakout), rate-of-change, drawdown-from-peak. Each gets an overlay or strip rendering so the replay stays legible.
-- **Exits as first-class rules**: stop-loss %, trailing stop, take-profit, time-based exit (N bars). These change results more than entries do — good lesson to make visible.
+- **Exits as first-class rules**: stop-loss %, trailing stop, take-profit, time-based exit (N bars) — as strategy params (sliders/toggles) for now, folded into the rule builder when it lands. These change results more than entries do — good lesson to make visible.
   - Requires **honest intrabar fills** (the one structural engine upgrade): a stop triggers when `bar.low <= stop`, filled at the stop price — unless the bar *gapped open* below it, in which case you get the open, not your stop. Cheap backtesters fudge this and overstate how well stops work. We have full OHLC, so do it right.
-- **Regime filter (signal compounding)**: gate one rule with another — e.g. only take RSI dip-buys while price is above the 200-day MA, or 50/200 cross + protective stop. Falls out of the rule builder's AND/OR groups, but call it out explicitly: it's the most common and most instructive combo to test (stops on slow trend systems often *hurt* — see Kaminski & Lo, "When Do Stop-Loss Rules Stop Losses?").
+- **Regime filter (signal compounding)**: gate one rule with another — e.g. only take RSI dip-buys while price is above the 200-day MA, or 50/200 cross + protective stop. For now a per-strategy toggle/param (e.g. "only long above N-day MA"); generalizes into the rule builder's AND/OR groups later. Called out explicitly because it's the most common and most instructive combo to test (stops on slow trend systems often *hurt* — see Kaminski & Lo, "When Do Stop-Loss Rules Stop Losses?").
 - **Position sizing**: all-in → fixed fraction, volatility-targeted (ATR-based). Adds the "how much" axis to the "when" axis.
 - **Friction**: per-trade fee + slippage bps setting. Default on, small — free trading flatters high-churn strategies.
 - **Custom JS strategy** (escape hatch): a code editor for `(bars, i, state) => signal` with the built-in indicators importable. Sandboxed via Function constructor; run on a worker if it gets slow.
@@ -27,13 +26,17 @@ This is what separates a toy from a tool — every feature here answers "was tha
 - **Walk-forward split**: pick params on an in-sample window, replay shades the out-of-sample region so you watch the strategy meet data it never saw.
 - **Monte Carlo on trades**: bootstrap-resample the trade sequence → distribution of end equity and max drawdown, not a single path. "Median outcome" and "5th percentile" cards next to the point estimates.
 - **Multi-ticker scorecard**: run the current strategy across all tickers at once, small-multiples equity curves. A real edge survives asset changes; a curve-fit one doesn't.
+- **Luck benchmark (null distribution)**: run ~1,000 random strategies (coin-flip entries, exposure-matched to yours) on the same ticker/period → histogram of their CAGR/Sharpe with your strategy's dot on it. "Beats 99% of random" means something; "beats 30%" means the asset did the work. Permutation-test intuition (White's Reality Check) made visual. Exposure matching is the key detail — an always-long random baseline isn't a fair null for a strategy that's in the market 40% of the time.
 - **Richer analytics**: drawdown chart under the equity curve, per-trade MAE/MFE, holding-period and PnL histograms, exposure % (time in market).
 - **Regime shading**: bear-market bands on the price chart so you can see *where* the strategy earns its keep.
 
-## Phase 4 — Data expansion
+## Phase 4 — Rule builder + data expansion
+
+- **Rule builder**: entry/exit as composable conditions instead of hardcoded strategies — `[indicator] [crosses above | crosses below | > | <] [indicator | value]`, AND/OR groups. MA cross and RSI become presets of the same builder, not special cases; the Phase 2 exit params and regime toggles fold in as rule types. Deferred here because it's dominated by UX decisions (how conditions compose and render), not engine work — sketch the interaction model together before building.
 
 - More bundled tickers (sector ETFs, EFA/EEM for non-US, a failed-stock cautionary tale or two for survivorship honesty).
 - CSV upload → backtest anything (the column-JSON decode already isolates the format).
+- **On-demand ticker fetch**: type any symbol in the app → pull full history from the Yahoo chart API and backtest it, no npm script round-trip. Needs a CORS story (proxy route or serverless fn — Yahoo won't answer browser fetches directly); cache fetched series locally (IndexedDB) so repeat loads are instant and offline-friendly.
 - Weekly bars toggle (resample client-side) for slower strategies and longer effective history.
 - Portfolio mode: multiple tickers with target weights + rebalancing rules — turns the tool into an allocation tester (ties back to the rent-vs-buy "invest the difference" assumption).
 

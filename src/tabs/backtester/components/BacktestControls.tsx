@@ -2,6 +2,7 @@ import manifest from '../../../data/ohlc/index.json'
 import { getStrategy, defaultParams } from '../engine/strategies'
 import { useBacktestStore } from '../store'
 import { StrategyPicker } from './StrategyPicker'
+import { EngineSettingsPanel } from './EngineSettingsPanel'
 import { fmtMoney } from '../../../lib/format'
 
 interface ManifestEntry {
@@ -112,6 +113,8 @@ export function BacktestControls() {
           className="w-full accent-blue-500"
         />
       </Section>
+
+      <EngineSettingsPanel />
 
       <button
         onClick={reset}

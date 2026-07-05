@@ -45,6 +45,8 @@ export interface Strategy {
   init(bars: Bar[], params: Record<string, number>): StrategyRun
 }
 
+export type ExitReason = 'signal' | 'stop' | 'trail' | 'take-profit' | 'time'
+
 export interface Trade {
   entryIdx: number
   entryDate: string
@@ -52,9 +54,32 @@ export interface Trade {
   exitIdx?: number
   exitDate?: string
   exitPrice?: number
+  exitReason?: ExitReason
   shares: number
   pnl?: number
   pnlPct?: number
+  /** max adverse excursion while held: worst low vs entry (≤ 0) */
+  maePct?: number
+  /** max favorable excursion while held: best high vs entry (≥ 0) */
+  mfePct?: number
+  /** bars held (set on close) */
+  barsHeld?: number
+}
+
+export type SizingMode = 'all' | 'fixed' | 'vol'
+
+/** Engine-level knobs that apply to any strategy. 0 disables an exit/filter. */
+export interface EngineSettings {
+  slippageBps: number
+  feePerTrade: number
+  sizingMode: SizingMode
+  fixedPct: number // % of equity per entry, sizingMode 'fixed'
+  volTargetPct: number // annualized vol target %, sizingMode 'vol'
+  stopPct: number // stop-loss % below entry
+  trailPct: number // trailing stop % below peak high
+  tpPct: number // take-profit % above entry
+  maxBars: number // time exit after N bars
+  regimeMaDays: number // only long while close > N-day MA
 }
 
 export interface Metrics {
@@ -64,6 +89,8 @@ export interface Metrics {
   sharpe: number
   winRate: number | null
   numTrades: number
+  /** fraction of bars spent in the market; null when position data unavailable */
+  exposure: number | null
 }
 
 export interface BacktestResult {
@@ -77,4 +104,10 @@ export interface BacktestResult {
   metrics: Metrics
   benchMetrics: Metrics
   run: StrategyRun
+  /** effective warmup: strategy warmup extended by the regime MA if active */
+  warmup: number
+  /** strategy overlays plus the regime MA line when the filter is on */
+  overlays: { label: string; color: string; values: (number | null)[] }[]
+  /** regime MA values when the filter is on; null otherwise */
+  gate: (number | null)[] | null
 }

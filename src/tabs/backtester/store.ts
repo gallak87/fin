@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import type { Bar, BacktestResult } from './engine/types'
-import { runBacktest } from './engine/engine'
+import type { Bar, BacktestResult, EngineSettings } from './engine/types'
+import { runBacktest, DEFAULT_SETTINGS } from './engine/engine'
 import { getStrategy, defaultParams, STRATEGIES } from './engine/strategies'
 
 // eager: which tickers exist; lazy: the actual bar data, one chunk per ticker
@@ -29,6 +29,7 @@ interface BacktestStore {
   params: Record<string, Record<string, number>>
   capital: number
   speed: number // multiplier; 1× = 4 bars/sec
+  settings: EngineSettings
 
   // ephemeral
   bars: Bar[] | null
@@ -41,6 +42,7 @@ interface BacktestStore {
   setParam: (key: string, value: number) => void
   setCapital: (capital: number) => void
   setSpeed: (speed: number) => void
+  setSetting: <K extends keyof EngineSettings>(key: K, value: EngineSettings[K]) => void
   play: () => void
   pause: () => void
   stepFwd: (n?: number) => void
@@ -55,14 +57,15 @@ const DEFAULTS = {
   params: Object.fromEntries(STRATEGIES.map((s) => [s.id, defaultParams(s)])),
   capital: 10_000,
   speed: 8,
+  settings: DEFAULT_SETTINGS,
 }
 
 function rerun(s: BacktestStore): Partial<BacktestStore> {
   if (!s.bars) return { result: null, cursor: 0, playing: false }
   const strategy = getStrategy(s.strategyId)
   const params = { ...defaultParams(strategy), ...(s.params[strategy.id] ?? {}) }
-  const result = runBacktest(s.bars, strategy, params, s.capital)
-  return { result, cursor: Math.min(result.run.warmup, s.bars.length - 1), playing: false }
+  const result = runBacktest(s.bars, strategy, params, s.capital, s.settings)
+  return { result, cursor: Math.min(result.warmup, s.bars.length - 1), playing: false }
 }
 
 export const useBacktestStore = create<BacktestStore>()(
@@ -101,11 +104,17 @@ export const useBacktestStore = create<BacktestStore>()(
       setCapital: (capital) => set((s) => ({ capital, ...rerun({ ...s, capital }) })),
       setSpeed: (speed) => set({ speed }),
 
+      setSetting: (key, value) =>
+        set((s) => {
+          const settings = { ...s.settings, [key]: value }
+          return { settings, ...rerun({ ...s, settings }) }
+        }),
+
       play: () => {
         const s = get()
         if (!s.result || !s.bars) return
         // restart from the top if the tape already ran out
-        if (s.cursor >= s.bars.length - 1) set({ cursor: s.result.run.warmup })
+        if (s.cursor >= s.bars.length - 1) set({ cursor: s.result.warmup })
         set({ playing: true })
       },
       pause: () => set({ playing: false }),
@@ -119,12 +128,12 @@ export const useBacktestStore = create<BacktestStore>()(
         }),
 
       stepBack: (n = 1) =>
-        set((s) => ({ cursor: Math.max(s.cursor - n, s.result?.run.warmup ?? 0) })),
+        set((s) => ({ cursor: Math.max(s.cursor - n, s.result?.warmup ?? 0) })),
 
       seek: (i) =>
         set((s) => {
           if (!s.bars) return {}
-          const min = s.result?.run.warmup ?? 0
+          const min = s.result?.warmup ?? 0
           return { cursor: Math.max(min, Math.min(i, s.bars.length - 1)) }
         }),
 
@@ -139,7 +148,17 @@ export const useBacktestStore = create<BacktestStore>()(
         params: s.params,
         capital: s.capital,
         speed: s.speed,
+        settings: s.settings,
       }),
+      merge: (persisted, current) => {
+        const p = persisted as Partial<BacktestStore> | undefined
+        // deep-merge settings so configs saved before a new knob existed get its default
+        return {
+          ...current,
+          ...p,
+          settings: { ...DEFAULT_SETTINGS, ...(p?.settings ?? {}) },
+        }
+      },
       onRehydrateStorage: () => (state) => {
         // land ready to play after a reload
         if (state) void state.loadTicker(state.ticker)

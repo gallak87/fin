@@ -1,6 +1,14 @@
-import type { BacktestResult } from '../engine/types'
+import type { BacktestResult, ExitReason } from '../engine/types'
 
 const money = (n: number) => `$${n.toLocaleString(undefined, { maximumFractionDigits: 2 })}`
+
+const REASON: Record<ExitReason, { label: string; cls: string }> = {
+  signal: { label: 'signal', cls: 'text-gray-400' },
+  stop: { label: 'stop', cls: 'text-red-400' },
+  trail: { label: 'trail', cls: 'text-orange-400' },
+  'take-profit': { label: 'target', cls: 'text-green-400' },
+  time: { label: 'time', cls: 'text-blue-400' },
+}
 
 export function TradeLog({ result, cursor }: { result: BacktestResult; cursor: number }) {
   const visible = result.trades.filter((t) => t.entryIdx <= cursor).reverse()
@@ -19,6 +27,7 @@ export function TradeLog({ result, cursor }: { result: BacktestResult; cursor: n
                 <th className="px-2 py-1.5 font-normal text-right">Entry $</th>
                 <th className="px-2 py-1.5 font-normal">Exit</th>
                 <th className="px-2 py-1.5 font-normal text-right">Exit $</th>
+                <th className="px-2 py-1.5 font-normal">Why</th>
                 <th className="px-2 py-1.5 font-normal text-right">P&amp;L</th>
                 <th className="px-3 py-1.5 font-normal text-right">P&amp;L %</th>
               </tr>
@@ -33,6 +42,9 @@ export function TradeLog({ result, cursor }: { result: BacktestResult; cursor: n
                     <td className="px-2 py-1 text-right">{money(t.entryPrice)}</td>
                     <td className="px-2 py-1">{closed ? t.exitDate : <span className="text-gray-500">open</span>}</td>
                     <td className="px-2 py-1 text-right">{closed ? money(t.exitPrice!) : '—'}</td>
+                    <td className={`px-2 py-1 ${closed && t.exitReason ? REASON[t.exitReason].cls : 'text-gray-500'}`}>
+                      {closed && t.exitReason ? REASON[t.exitReason].label : '—'}
+                    </td>
                     <td className={`px-2 py-1 text-right ${closed ? pnlColor : 'text-gray-500'}`}>
                       {closed ? money(t.pnl!) : '—'}
                     </td>
