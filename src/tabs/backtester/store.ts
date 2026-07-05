@@ -1,0 +1,149 @@
+import { create } from 'zustand'
+import { persist } from 'zustand/middleware'
+import type { Bar, BacktestResult } from './engine/types'
+import { runBacktest } from './engine/engine'
+import { getStrategy, defaultParams, STRATEGIES } from './engine/strategies'
+
+// eager: which tickers exist; lazy: the actual bar data, one chunk per ticker
+const OHLC_MODULES = import.meta.glob(['../../data/ohlc/*.json', '!../../data/ohlc/index.json'])
+
+interface OhlcFile {
+  ticker: string
+  name: string
+  t: string[]
+  o: number[]
+  h: number[]
+  l: number[]
+  c: number[]
+  v: number[]
+}
+
+function decodeBars(f: OhlcFile): Bar[] {
+  return f.t.map((t, i) => ({ t, o: f.o[i], h: f.h[i], l: f.l[i], c: f.c[i], v: f.v[i] }))
+}
+
+interface BacktestStore {
+  // persisted config
+  ticker: string
+  strategyId: string
+  params: Record<string, Record<string, number>>
+  capital: number
+  speed: number // multiplier; 1× = 4 bars/sec
+
+  // ephemeral
+  bars: Bar[] | null
+  result: BacktestResult | null
+  cursor: number
+  playing: boolean
+
+  loadTicker: (ticker: string) => Promise<void>
+  setStrategy: (id: string) => void
+  setParam: (key: string, value: number) => void
+  setCapital: (capital: number) => void
+  setSpeed: (speed: number) => void
+  play: () => void
+  pause: () => void
+  stepFwd: (n?: number) => void
+  stepBack: (n?: number) => void
+  seek: (i: number) => void
+  reset: () => void
+}
+
+const DEFAULTS = {
+  ticker: 'SPY',
+  strategyId: 'ma-cross',
+  params: Object.fromEntries(STRATEGIES.map((s) => [s.id, defaultParams(s)])),
+  capital: 10_000,
+  speed: 8,
+}
+
+function rerun(s: BacktestStore): Partial<BacktestStore> {
+  if (!s.bars) return { result: null, cursor: 0, playing: false }
+  const strategy = getStrategy(s.strategyId)
+  const params = { ...defaultParams(strategy), ...(s.params[strategy.id] ?? {}) }
+  const result = runBacktest(s.bars, strategy, params, s.capital)
+  return { result, cursor: Math.min(result.run.warmup, s.bars.length - 1), playing: false }
+}
+
+export const useBacktestStore = create<BacktestStore>()(
+  persist(
+    (set, get) => ({
+      ...DEFAULTS,
+      bars: null,
+      result: null,
+      cursor: 0,
+      playing: false,
+
+      loadTicker: async (ticker) => {
+        set({ ticker, bars: null, result: null, playing: false })
+        const load = OHLC_MODULES[`../../data/ohlc/${ticker}.json`]
+        if (!load) return
+        const mod = (await load()) as { default: OhlcFile }
+        // ignore stale loads if the user switched tickers mid-flight
+        if (get().ticker !== ticker) return
+        const bars = decodeBars(mod.default)
+        set((s) => ({ bars, ...rerun({ ...s, bars }) }))
+      },
+
+      setStrategy: (strategyId) => set((s) => ({ strategyId, ...rerun({ ...s, strategyId }) })),
+
+      setParam: (key, value) =>
+        set((s) => {
+          const strategy = getStrategy(s.strategyId)
+          const merged = { ...defaultParams(strategy), ...(s.params[s.strategyId] ?? {}), [key]: value }
+          // keep MA windows ordered
+          if (key === 'fast' && merged.slow != null && merged.fast >= merged.slow) merged.fast = merged.slow - 1
+          if (key === 'slow' && merged.fast != null && merged.slow <= merged.fast) merged.slow = merged.fast + 1
+          const params = { ...s.params, [s.strategyId]: merged }
+          return { params, ...rerun({ ...s, params }) }
+        }),
+
+      setCapital: (capital) => set((s) => ({ capital, ...rerun({ ...s, capital }) })),
+      setSpeed: (speed) => set({ speed }),
+
+      play: () => {
+        const s = get()
+        if (!s.result || !s.bars) return
+        // restart from the top if the tape already ran out
+        if (s.cursor >= s.bars.length - 1) set({ cursor: s.result.run.warmup })
+        set({ playing: true })
+      },
+      pause: () => set({ playing: false }),
+
+      stepFwd: (n = 1) =>
+        set((s) => {
+          if (!s.bars) return {}
+          const max = s.bars.length - 1
+          const cursor = Math.min(s.cursor + n, max)
+          return { cursor, playing: cursor >= max ? false : s.playing }
+        }),
+
+      stepBack: (n = 1) =>
+        set((s) => ({ cursor: Math.max(s.cursor - n, s.result?.run.warmup ?? 0) })),
+
+      seek: (i) =>
+        set((s) => {
+          if (!s.bars) return {}
+          const min = s.result?.run.warmup ?? 0
+          return { cursor: Math.max(min, Math.min(i, s.bars.length - 1)) }
+        }),
+
+      reset: () => set((s) => ({ ...DEFAULTS, ticker: s.ticker, ...rerun({ ...s, ...DEFAULTS, ticker: s.ticker }) })),
+    }),
+    {
+      name: 'backtester',
+      version: 1,
+      partialize: (s) => ({
+        ticker: s.ticker,
+        strategyId: s.strategyId,
+        params: s.params,
+        capital: s.capital,
+        speed: s.speed,
+      }),
+      onRehydrateStorage: () => (state) => {
+        // land ready to play after a reload
+        if (state) void state.loadTicker(state.ticker)
+      },
+    },
+  ),
+)
