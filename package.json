@@ -9,7 +9,7 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "data:pull": "node scripts/pull-zillow.mjs",
-    "data:ohlc": "node scripts/pull-stooq.mjs"
+    "data:ohlc": "node scripts/pull-ohlc.mjs"
   },
   "dependencies": {
     "lightweight-charts": "^5.2.0",
