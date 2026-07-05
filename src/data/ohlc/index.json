@@ -1,1 +1,44 @@
-[]
+[
+  {
+    "ticker": "SPY",
+    "name": "S&P 500 ETF",
+    "firstDate": "2000-01-03",
+    "lastDate": "2026-07-02",
+    "bars": 6664
+  },
+  {
+    "ticker": "QQQ",
+    "name": "Nasdaq 100 ETF",
+    "firstDate": "2000-01-03",
+    "lastDate": "2026-07-02",
+    "bars": 6664
+  },
+  {
+    "ticker": "GLD",
+    "name": "Gold ETF",
+    "firstDate": "2004-11-18",
+    "lastDate": "2026-07-02",
+    "bars": 5438
+  },
+  {
+    "ticker": "AAPL",
+    "name": "Apple",
+    "firstDate": "2000-01-03",
+    "lastDate": "2026-07-02",
+    "bars": 6664
+  },
+  {
+    "ticker": "TLT",
+    "name": "20y Treasury ETF",
+    "firstDate": "2002-07-30",
+    "lastDate": "2026-07-02",
+    "bars": 6020
+  },
+  {
+    "ticker": "BTC",
+    "name": "Bitcoin / USD",
+    "firstDate": "2014-09-17",
+    "lastDate": "2026-07-05",
+    "bars": 4309
+  }
+]

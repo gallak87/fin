@@ -53,17 +53,21 @@ export function EquityChart({ result, cursor }: { result: BacktestResult; cursor
 
     const prev = prevCursor.current
     if (prev !== -1 && cursor > prev && cursor - prev <= 50) {
+      // whitespace points past the cursor already exist → historical update
       for (let i = prev + 1; i <= cursor; i++) {
-        strat.update(point(equity, i))
-        bench.update(point(benchmark, i))
+        strat.update(point(equity, i), true)
+        bench.update(point(benchmark, i), true)
       }
     } else if (cursor !== prev) {
-      const idx = Array.from({ length: cursor + 1 }, (_, i) => i)
-      strat.setData(idx.map((i) => point(equity, i)))
-      bench.setData(idx.map((i) => point(benchmark, i)))
+      // full-range data with whitespace beyond the cursor keeps the time axis
+      // pinned to the whole period instead of sliding as the tape plays
+      const points = (arr: number[]) =>
+        bars.map((b, i) => (i <= cursor ? point(arr, i) : { time: toTime(b.t) }))
+      strat.setData(points(equity))
+      bench.setData(points(benchmark))
+      chart.timeScale().fitContent()
     }
     prevCursor.current = cursor
-    chart.timeScale().fitContent()
   }, [chart, result, cursor])
 
   return (

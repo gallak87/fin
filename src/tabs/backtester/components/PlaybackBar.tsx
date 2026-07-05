@@ -49,6 +49,9 @@ export function PlaybackBar() {
       <button className={btn} onClick={() => stepFwd()} title="Step forward one day">
         +1
       </button>
+      <button className={btn} onClick={() => seek(bars.length - 1)} title="Jump to end">
+        ⏭
+      </button>
 
       <select
         value={speed}
