@@ -26,8 +26,15 @@ export interface StrategyRun {
   signalAt(i: number): Signal
   /** indicator lines drawn on the price chart (e.g. MAs); [] if none */
   overlays: { label: string; color: string; values: (number | null)[] }[]
-  /** present only for RSI-style strategies → renders the RSI strip */
-  rsi?: { values: (number | null)[]; buyBelow: number; sellAbove: number }
+  /** oscillator pane under the price chart (RSI, MACD, ROC, …) */
+  strip?: {
+    label: string
+    series: { label: string; color: string; values: (number | null)[] }[]
+    /** horizontal dashed guide lines (thresholds, zero line) */
+    guides: number[]
+    /** fixed scale, e.g. 0–100 for RSI; autoscale when omitted */
+    range?: { min: number; max: number }
+  }
   /** plain-English state of the strategy at bar i, for the signal strip */
   explainAt(i: number): string
   /** first index with valid signals */

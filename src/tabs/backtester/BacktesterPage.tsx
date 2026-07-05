@@ -4,7 +4,7 @@ import { BacktestControls } from './components/BacktestControls'
 import { PlaybackBar } from './components/PlaybackBar'
 import { SignalStrip } from './components/SignalStrip'
 import { PriceChart } from './components/PriceChart'
-import { RsiStrip } from './components/RsiStrip'
+import { IndicatorStrip } from './components/IndicatorStrip'
 import { EquityChart } from './components/EquityChart'
 import { BacktestMetrics } from './components/BacktestMetrics'
 import { TradeLog } from './components/TradeLog'
@@ -56,7 +56,7 @@ export default function BacktesterPage({ drawerOpen }: { drawerOpen: boolean }) 
             <PlaybackBar />
             <SignalStrip result={result} cursor={cursor} />
             <PriceChart result={result} cursor={cursor} />
-            {result.run.rsi && <RsiStrip result={result} cursor={cursor} />}
+            {result.run.strip && <IndicatorStrip result={result} cursor={cursor} />}
             <EquityChart result={result} cursor={cursor} />
             <BacktestMetrics result={result} cursor={cursor} />
             <TradeLog result={result} cursor={cursor} />
