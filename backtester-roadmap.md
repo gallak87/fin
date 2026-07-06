@@ -2,6 +2,8 @@
 
 Direction: an experimentation lab, not a trading terminal. Optimize for "try an idea in under a minute and understand why it won or lost." Live execution is deliberately last.
 
+Reordered 2026-07-05: a candidate strategy (12/30 MA cross on BTC, 7% stop) passed the lab — vs-random, sweep plateau, walk-forward (OOS Sharpe 1.08). The 2021 lesson was that the strategy wasn't the failure point, following it was — so signals-forward (paper trading + alerts) moves ahead of the rule builder. The goal is a process that removes discretionary override, signal by signal.
+
 ## Phase 1 — Tape player (done)
 
 Bar-by-bar replay, 4 canned strategies, metrics vs buy & hold, trade log.
@@ -40,18 +42,25 @@ This is what separates a toy from a tool — every feature here answers "was tha
 - **Heatmap color legend**: ramp is normalized to the grid's min/max with no scale shown — a dark cell might still beat B&H. Label the ramp ends with actual values.
 - **Engine tests in-repo**: the intrabar-fill/sizing/friction smoke tests live outside the repo; promote to vitest (`engine.test.ts`).
 
-## Phase 4 — Rule builder + data expansion
+## Phase 4 — Signals forward (paper trading + alerts)
 
-- **Rule builder**: entry/exit as composable conditions instead of hardcoded strategies — `[indicator] [crosses above | crosses below | > | <] [indicator | value]`, AND/OR groups. MA cross and RSI become presets of the same builder, not special cases; the Phase 2 exit params and regime toggles fold in as rule types. Deferred here because it's dominated by UX decisions (how conditions compose and render), not engine work — sketch the interaction model together before building.
+The point: prove the *process*, not the strategy — the strategy already passed the lab. Months of "did I follow it?" data before any real sizing.
 
+- **On-demand / live data fetch** (prerequisite, pulled forward from data expansion): fetch fresh daily closes from the Yahoo chart API on demand — both "type any symbol → backtest it" and "refresh BTC to today." Needs a CORS story (proxy route or serverless fn — Yahoo won't answer browser fetches directly); cache fetched series locally (IndexedDB).
+- **Paper trading journal**: pin a strategy+params as "live," evaluate it on each new daily close, log every signal it fires with the would-be fill. Track live equity vs the backtest's expectation from the same start date — drift between them is the honest report card.
+- **Alerts, no execution**: notification when a signal fires ("12/30 cross went flat on BTC — sell at next open"). Email/push/whatever is cheapest; the delivery matters less than the audit trail.
+- **Pre-committed tripwires**: write down, in the app, what invalidates the strategy (e.g. drawdown beyond the Monte Carlo worst-5%) vs what's normal pain (loss streaks inside the backtest envelope). The journal records overrides — the whole 2021 failure mode, instrumented.
+- **Behavior report**: after N months, signals fired vs signals followed, live vs backtest drift. This is the go/no-go input for Phase 6, not the backtest numbers.
+
+## Phase 5 — Rule builder + data expansion
+
+- **Rule builder**: entry/exit as composable conditions instead of hardcoded strategies — `[indicator] [crosses above | crosses below | > | <] [indicator | value]`, AND/OR groups. MA cross and RSI become presets of the same builder, not special cases; the Phase 2 exit params and regime toggles fold in as rule types. Dominated by UX decisions (how conditions compose and render), not engine work — sketch the interaction model together before building.
 - More bundled tickers (sector ETFs, EFA/EEM for non-US, a failed-stock cautionary tale or two for survivorship honesty).
 - CSV upload → backtest anything (the column-JSON decode already isolates the format).
-- **On-demand ticker fetch**: type any symbol in the app → pull full history from the Yahoo chart API and backtest it, no npm script round-trip. Needs a CORS story (proxy route or serverless fn — Yahoo won't answer browser fetches directly); cache fetched series locally (IndexedDB) so repeat loads are instant and offline-friendly.
 - Weekly bars toggle (resample client-side) for slower strategies and longer effective history.
 - Portfolio mode: multiple tickers with target weights + rebalancing rules — turns the tool into an allocation tester (ties back to the rent-vs-buy "invest the difference" assumption).
 
-## Phase 5 — Toward real money (later, maybe)
+## Phase 6 — Real money (later, maybe)
 
-- Paper trading first: run a strategy forward on live daily closes, journal its signals, compare live vs backtest drift.
-- Alerts ("golden cross fired on SPY") via notification, no execution.
-- Broker API execution (Alpaca or IBKR) only after a strategy survives Phase 3 honestly + months of paper trading.
+- Broker/exchange API execution (Alpaca, IBKR, or a crypto exchange for BTC) only after the Phase 4 behavior report shows months of followed signals — automation as a discipline tool, not a speed tool.
+- If the journal shows overrides instead: the answer is the bot or nothing, not more willpower.
