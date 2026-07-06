@@ -30,6 +30,16 @@ This is what separates a toy from a tool — every feature here answers "was tha
 - **Richer analytics**: drawdown chart under the equity curve, per-trade MAE/MFE, holding-period and PnL histograms, exposure % (time in market).
 - **Regime shading**: bear-market bands on the price chart so you can see *where* the strategy earns its keep.
 
+## Polish backlog (from the post-Phase-3 layout review)
+
+- **Time-axis mismatch**: price chart follows the cursor (trailing ~200 bars) while equity/drawdown pin to full history — three stacked charts, two time windows, no cue. Add a "you are here" cursor line on the full-range charts, or a shared-timeline toggle.
+- **Pin headline metrics**: CAGR / Sharpe / max DD vs B&H belong in the sticky playback bar — the tweak-slider → check-verdict loop currently costs a scroll round-trip.
+- **Sidebar hierarchy**: engine-level knobs (exits, sizing, regime, friction) render identically to strategy params. Collapse them into sections with active-state summaries ("Exits: stop 7%") so non-default settings are visible at a glance — a forgotten stop silently reshapes every strategy.
+- **Compact strategy picker**: ten full-blurb cards is scroll tax; blurb on hover/selected only.
+- **Lab discoverability + staleness**: the lab is buried below the trade log, and results silently vanish when inputs change — say "results cleared: inputs changed" instead of just emptying.
+- **Heatmap color legend**: ramp is normalized to the grid's min/max with no scale shown — a dark cell might still beat B&H. Label the ramp ends with actual values.
+- **Engine tests in-repo**: the intrabar-fill/sizing/friction smoke tests live outside the repo; promote to vitest (`engine.test.ts`).
+
 ## Phase 4 — Rule builder + data expansion
 
 - **Rule builder**: entry/exit as composable conditions instead of hardcoded strategies — `[indicator] [crosses above | crosses below | > | <] [indicator | value]`, AND/OR groups. MA cross and RSI become presets of the same builder, not special cases; the Phase 2 exit params and regime toggles fold in as rule types. Deferred here because it's dominated by UX decisions (how conditions compose and render), not engine work — sketch the interaction model together before building.
