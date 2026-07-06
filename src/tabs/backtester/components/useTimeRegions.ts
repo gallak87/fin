@@ -62,3 +62,43 @@ export function useTimeRegions(
     }
   }, [chart, containerRef, regions])
 }
+
+/**
+ * "You are here" playback-cursor line on full-range charts, so the pinned
+ * equity/drawdown timelines line up with the sliding price chart.
+ */
+export function useCursorLine(
+  chart: IChartApi | null,
+  containerRef: React.RefObject<HTMLDivElement | null>,
+  cursor: number,
+) {
+  useEffect(() => {
+    const container = containerRef.current
+    if (!chart || !container) return
+    const line = document.createElement('div')
+    line.style.cssText =
+      'position:absolute;top:0;bottom:0;width:1px;background:rgba(156,163,175,0.45);pointer-events:none;z-index:4'
+    container.appendChild(line)
+
+    const render = () => {
+      const x = chart.timeScale().logicalToCoordinate(cursor as Logical)
+      if (x == null || x < 0 || x > container.clientWidth) {
+        line.style.display = 'none'
+      } else {
+        line.style.display = ''
+        line.style.left = `${x}px`
+      }
+    }
+
+    render()
+    const ts = chart.timeScale()
+    ts.subscribeVisibleLogicalRangeChange(render)
+    const ro = new ResizeObserver(render)
+    ro.observe(container)
+    return () => {
+      ts.unsubscribeVisibleLogicalRangeChange(render)
+      ro.disconnect()
+      line.remove()
+    }
+  }, [chart, containerRef, cursor])
+}

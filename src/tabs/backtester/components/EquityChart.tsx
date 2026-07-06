@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react'
 import { LineSeries, type ISeriesApi } from 'lightweight-charts'
 import type { BacktestResult } from '../engine/types'
 import { useChart, toTime } from './useChart'
-import { useTimeRegions, type TimeRegion } from './useTimeRegions'
+import { useCursorLine, useTimeRegions, type TimeRegion } from './useTimeRegions'
 import { fmtK } from '../../../lib/format'
 
 export function EquityChart({
@@ -18,6 +18,7 @@ export function EquityChart({
     localization: { priceFormatter: (p: number) => fmtK(p) },
   })
   useTimeRegions(chart, containerRef, regions)
+  useCursorLine(chart, containerRef, cursor)
   const stratRef = useRef<ISeriesApi<'Line'> | null>(null)
   const benchRef = useRef<ISeriesApi<'Line'> | null>(null)
   const prevCursor = useRef(-1)

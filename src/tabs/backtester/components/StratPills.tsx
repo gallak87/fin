@@ -1,6 +1,37 @@
 import { useBacktestStore } from '../store'
 import { CUSTOM_ID } from '../engine/custom'
 import { getStrategy, defaultParams } from '../engine/strategies'
+import { fmtK } from '../../../lib/format'
+
+/**
+ * Where the tape ends, shown up front — the full series is precomputed, so no
+ * need to fast-forward to see the final outcome.
+ */
+function FinalOutcome() {
+  const result = useBacktestStore((s) => s.result)
+  const capital = useBacktestStore((s) => s.capital)
+  if (!result) return null
+  const end = result.equity[result.equity.length - 1]
+  const bench = result.benchmark[result.benchmark.length - 1]
+  const basis = result.contributed ? result.contributed[result.contributed.length - 1] : capital
+  const pct = basis > 0 ? end / basis - 1 : 0
+  const win = end >= bench
+  return (
+    <span
+      className="ml-auto inline-flex items-center gap-2 text-xs font-mono tabular-nums"
+      title="Final outcome at the end of the tape (spoiler — the replay still starts at the beginning)"
+    >
+      <span className="text-gray-500">{fmtK(basis)} →</span>
+      <span className={win ? 'text-green-400' : 'text-red-400'}>
+        {fmtK(end)} ({pct >= 0 ? '+' : ''}
+        {pct >= 10 ? `${Math.round(pct * 100).toLocaleString()}%` : `${(pct * 100).toFixed(1)}%`})
+      </span>
+      <span className="text-gray-500">
+        B&amp;H {fmtK(bench)}
+      </span>
+    </span>
+  )
+}
 
 /** Saved-strategy pills: + Save snapshots the current config, click a pill to apply it. */
 export function StratPills() {
@@ -69,6 +100,7 @@ export function StratPills() {
           </span>
         )
       })}
+      <FinalOutcome />
     </div>
   )
 }

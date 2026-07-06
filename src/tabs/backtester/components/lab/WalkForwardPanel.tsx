@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { runBacktest } from '../../engine/engine'
 import { gridValues, mapChunked, metricsOnWindow } from '../../engine/lab'
 import { useBacktestStore } from '../../store'
-import { AxisSelect, RunButton, Stat } from './labCommon'
+import { AxisSelect, RunButton, StaleNote, Stat } from './labCommon'
 import { useActiveStrategy, useComputed, useParamAxes } from './labUtils'
 import { fmtPct } from '../../../../lib/format'
 
@@ -30,7 +30,7 @@ export function WalkForwardPanel() {
 
   const { numeric, x, y, setXKey, setYKey } = useParamAxes(strategy?.params ?? [])
   const [split, setSplit] = useState(70)
-  const [res, setRes] = useComputed<WfResult>([strategyId, bars, settings, capital, split])
+  const [res, setRes, resStale] = useComputed<WfResult>([strategyId, bars, settings, capital, split])
   const [progress, setProgress] = useState<number | null>(null)
 
   if (!strategy || numeric.length < 2 || !x || !y) {
@@ -124,6 +124,7 @@ export function WalkForwardPanel() {
           <span className="font-mono text-gray-200">{split}/{100 - split}</span>
         </label>
         <RunButton onClick={() => void run()} progress={progress} label="Run walk-forward" />
+        <StaleNote show={resStale} />
       </div>
       {res && (
         <div className="space-y-2">

@@ -76,6 +76,12 @@ export function RunButton({
   )
 }
 
+/** Shown when a panel's results were invalidated by an input change. */
+export function StaleNote({ show }: { show: boolean }) {
+  if (!show) return null
+  return <span className="text-[10px] text-amber-400/80">inputs changed — results cleared, re-run</span>
+}
+
 export function Stat({ label, value, tone = 'neutral' }: { label: string; value: string; tone?: 'good' | 'bad' | 'neutral' }) {
   const color = tone === 'good' ? 'text-green-400' : tone === 'bad' ? 'text-red-400' : 'text-gray-200'
   return (

@@ -3,7 +3,7 @@ import manifest from '../../../../data/ohlc/index.json'
 import type { Metrics } from '../../engine/types'
 import { runBacktest } from '../../engine/engine'
 import { useBacktestStore, loadBars } from '../../store'
-import { RunButton } from './labCommon'
+import { RunButton, StaleNote } from './labCommon'
 import { useActiveStrategy, useComputed } from './labUtils'
 import { defaultParams } from '../../engine/strategies'
 import { fmtPct } from '../../../../lib/format'
@@ -64,7 +64,7 @@ export function TickerScorecard() {
   const params = useBacktestStore((s) => s.params)
   const strategyId = useBacktestStore((s) => s.strategyId)
   const strategy = useActiveStrategy()
-  const [rows, setRows] = useComputed<Row[]>([strategyId, params, settings, capital])
+  const [rows, setRows, rowsStale] = useComputed<Row[]>([strategyId, params, settings, capital])
   const [progress, setProgress] = useState<number | null>(null)
 
   if (!strategy) return <p className="text-xs text-gray-500 p-1">Fix the custom strategy code first.</p>
@@ -108,6 +108,7 @@ export function TickerScorecard() {
       </p>
       <div className="flex items-center gap-3">
         <RunButton onClick={() => void run()} progress={progress} label="Run on all tickers" />
+        <StaleNote show={rowsStale} />
         {rows && (
           <span className={`text-xs ${beats >= rows.length / 2 ? 'text-green-400' : 'text-red-400'}`}>
             beats buy &amp; hold on {beats} of {rows.length}

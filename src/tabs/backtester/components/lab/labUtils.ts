@@ -32,11 +32,12 @@ export function useActiveStrategy() {
  * Result state that self-invalidates when any dependency changes — panels keep
  * their computed runs only while the inputs that produced them are unchanged.
  */
-export function useComputed<T>(deps: unknown[]): [T | null, (v: T) => void] {
+export function useComputed<T>(deps: unknown[]): [T | null, (v: T) => void, boolean] {
   const [entry, setEntry] = useState<{ deps: unknown[]; value: T } | null>(null)
   const fresh =
     entry != null && entry.deps.length === deps.length && entry.deps.every((d, i) => Object.is(d, deps[i]))
-  return [fresh ? entry.value : null, (value: T) => setEntry({ deps, value })]
+  // stale = we HAD results but an input changed since they were computed
+  return [fresh ? entry.value : null, (value: T) => setEntry({ deps, value }), entry != null && !fresh]
 }
 
 /** Sequential blue ramp on the dark surface: brighter = higher (better). */

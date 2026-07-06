@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { mapChunked, mulberry32, quantile } from '../../engine/lab'
 import { useBacktestStore } from '../../store'
-import { Histogram, RunButton, Stat } from './labCommon'
+import { Histogram, RunButton, StaleNote, Stat } from './labCommon'
 import { useComputed } from './labUtils'
 import { fmtMoney, fmtPct } from '../../../../lib/format'
 
@@ -17,7 +17,7 @@ const N = 2000
 export function MonteCarloPanel() {
   const result = useBacktestStore((s) => s.result)
   const capital = useBacktestStore((s) => s.capital)
-  const [res, setRes] = useComputed<McResult>([result])
+  const [res, setRes, resStale] = useComputed<McResult>([result])
   const [progress, setProgress] = useState<number | null>(null)
 
   const closed = (result?.trades ?? []).filter((t) => t.pnlPct != null)
@@ -70,7 +70,10 @@ export function MonteCarloPanel() {
         replacement, {N.toLocaleString()} times) shows the range of outcomes the same trades could have
         produced — the point estimate is the least interesting number in the distribution.
       </p>
-      <RunButton onClick={() => void run()} progress={progress} label={`Resample ${N.toLocaleString()}×`} />
+      <div className="flex items-center gap-2">
+        <RunButton onClick={() => void run()} progress={progress} label={`Resample ${N.toLocaleString()}×`} />
+        <StaleNote show={resStale} />
+      </div>
       {res && (
         <div className="space-y-3">
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">

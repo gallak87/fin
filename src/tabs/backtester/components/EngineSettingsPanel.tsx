@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import type { EngineSettings, SizingMode } from '../engine/types'
 import { useBacktestStore } from '../store'
 
@@ -58,12 +59,44 @@ function Slider({ def }: { def: SliderDef }) {
   )
 }
 
-function Section({ title, hint, children }: { title: string; hint?: string; children: React.ReactNode }) {
+/**
+ * Collapsed by default with an active-state summary in the header, so a
+ * forgotten stop or regime filter can't silently reshape every strategy.
+ */
+function Section({
+  title,
+  summary,
+  isDefault,
+  hint,
+  children,
+}: {
+  title: string
+  summary: string
+  isDefault: boolean
+  hint?: string
+  children: React.ReactNode
+}) {
+  const [open, setOpen] = useState(false)
   return (
     <div className="space-y-2">
-      <div className="text-xs uppercase tracking-wide text-gray-500">{title}</div>
-      {hint && <div className="text-[11px] text-gray-600 leading-snug -mt-1">{hint}</div>}
-      {children}
+      <button
+        onClick={() => setOpen(!open)}
+        className="w-full flex items-center gap-2 text-xs uppercase tracking-wide text-gray-500 hover:text-gray-300"
+      >
+        <span className="text-[9px]">{open ? '▾' : '▸'}</span>
+        <span>{title}</span>
+        <span
+          className={`ml-auto normal-case font-mono tracking-normal ${isDefault ? 'text-gray-600' : 'text-amber-400/90'}`}
+        >
+          {summary}
+        </span>
+      </button>
+      {open && (
+        <>
+          {hint && <div className="text-[11px] text-gray-600 leading-snug">{hint}</div>}
+          {children}
+        </>
+      )}
     </div>
   )
 }
@@ -73,15 +106,34 @@ export function EngineSettingsPanel() {
   const settings = useBacktestStore((s) => s.settings)
   const setSetting = useBacktestStore((s) => s.setSetting)
 
+  const exitTags = [
+    settings.stopPct > 0 && `stop ${settings.stopPct}%`,
+    settings.trailPct > 0 && `trail ${settings.trailPct}%`,
+    settings.tpPct > 0 && `tp ${settings.tpPct}%`,
+    settings.maxBars > 0 && `${settings.maxBars} bars`,
+  ].filter(Boolean) as string[]
+  const sizingSummary =
+    settings.sizingMode === 'fixed'
+      ? `fixed ${settings.fixedPct}%`
+      : settings.sizingMode === 'vol'
+        ? `vol ${settings.volTargetPct}%`
+        : 'all-in'
+  const frictionSummary = `${settings.slippageBps}bps${settings.feePerTrade > 0 ? ` · $${settings.feePerTrade}` : ''}`
+
   return (
     <>
-      <Section title="Exits" hint="Stops fill intrabar at the level — or at the open if the bar gaps past it.">
+      <Section
+        title="Exits"
+        summary={exitTags.length ? exitTags.join(' · ') : 'off'}
+        isDefault={exitTags.length === 0}
+        hint="Stops fill intrabar at the level — or at the open if the bar gaps past it."
+      >
         {EXITS.map((d) => (
           <Slider key={d.key} def={d} />
         ))}
       </Section>
 
-      <Section title="Position sizing">
+      <Section title="Position sizing" summary={sizingSummary} isDefault={settings.sizingMode === 'all'}>
         <div className="grid grid-cols-3 gap-1.5">
           {SIZING_MODES.map((m) => (
             <button
@@ -107,11 +159,21 @@ export function EngineSettingsPanel() {
         )}
       </Section>
 
-      <Section title="Regime filter" hint="Only take long signals while price is above this moving average.">
+      <Section
+        title="Regime filter"
+        summary={settings.regimeMaDays > 0 ? `MA ${settings.regimeMaDays}` : 'off'}
+        isDefault={settings.regimeMaDays === 0}
+        hint="Only take long signals while price is above this moving average."
+      >
         <Slider def={{ key: 'regimeMaDays', label: 'Only long above MA', min: 0, max: 300, step: 10, off: 'Off', unit: 'd' }} />
       </Section>
 
-      <Section title="Friction" hint="Free trading flatters high-churn strategies — leave a little on.">
+      <Section
+        title="Friction"
+        summary={frictionSummary}
+        isDefault={settings.slippageBps === 5 && settings.feePerTrade === 0}
+        hint="Free trading flatters high-churn strategies — leave a little on."
+      >
         {FRICTION.map((d) => (
           <Slider key={d.key} def={d} />
         ))}

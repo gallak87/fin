@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef } from 'react'
 import { AreaSeries, type ISeriesApi } from 'lightweight-charts'
 import type { BacktestResult } from '../engine/types'
 import { useChart, toTime } from './useChart'
+import { useCursorLine } from './useTimeRegions'
 
 /** Underwater plot: % below the running equity peak, revealed with the tape. */
 export function DrawdownChart({ result, cursor }: { result: BacktestResult; cursor: number }) {
@@ -11,6 +12,7 @@ export function DrawdownChart({ result, cursor }: { result: BacktestResult; curs
   })
   const seriesRef = useRef<ISeriesApi<'Area'> | null>(null)
   const prevCursor = useRef(-1)
+  useCursorLine(chart, containerRef, cursor)
 
   // growth index for DCA so contributions don't mask drawdowns
   const dd = useMemo(() => {
@@ -67,7 +69,7 @@ export function DrawdownChart({ result, cursor }: { result: BacktestResult; curs
       <div className="px-1 pb-1 text-[10px] uppercase tracking-wide text-gray-500">
         Drawdown from peak — worst so far {worst.toFixed(1)}%
       </div>
-      <div ref={containerRef} className="h-[90px]" />
+      <div ref={containerRef} className="relative h-[90px]" />
     </div>
   )
 }

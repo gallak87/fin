@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { runBacktest } from '../../engine/engine'
 import { mapChunked, mulberry32, percentileRank, shuffleRuns, signalStrategy } from '../../engine/lab'
 import { useBacktestStore } from '../../store'
-import { Histogram, MetricPicker, RunButton, Stat } from './labCommon'
+import { Histogram, MetricPicker, RunButton, StaleNote, Stat } from './labCommon'
 import { fmtMetric, useComputed, type MetricKey } from './labUtils'
 import { fmtPct } from '../../../../lib/format'
 
@@ -14,7 +14,7 @@ export function LuckPanel() {
   const capital = useBacktestStore((s) => s.capital)
   const settings = useBacktestStore((s) => s.settings)
   const [metric, setMetric] = useState<MetricKey>('cagr')
-  const [values, setValues] = useComputed<Record<MetricKey, number[]>>([result])
+  const [values, setValues, valuesStale] = useComputed<Record<MetricKey, number[]>>([result])
   const [progress, setProgress] = useState<number | null>(null)
 
   if (!bars || !result) return null
@@ -73,6 +73,7 @@ export function LuckPanel() {
       <div className="flex flex-wrap items-center gap-2">
         <MetricPicker value={metric} onChange={setMetric} />
         <RunButton onClick={() => void run()} progress={progress} label={`Run ${N} random strategies`} />
+        <StaleNote show={valuesStale} />
       </div>
       {values && pct != null && (
         <div className="space-y-3">

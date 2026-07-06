@@ -3,7 +3,7 @@ import type { Metrics } from '../../engine/types'
 import { runBacktest } from '../../engine/engine'
 import { gridValues, mapChunked } from '../../engine/lab'
 import { useBacktestStore } from '../../store'
-import { AxisSelect, Histogram, MetricPicker, RunButton } from './labCommon'
+import { AxisSelect, Histogram, MetricPicker, RunButton, StaleNote } from './labCommon'
 import { fmtMetric, heatColor, useActiveStrategy, useComputed, useParamAxes, type MetricKey } from './labUtils'
 
 interface Grid {
@@ -30,7 +30,7 @@ export function SweepPanel() {
 
   const { numeric, x, y, setXKey, setYKey } = useParamAxes(strategy?.params ?? [])
   const [metric, setMetric] = useState<MetricKey>('sharpe')
-  const [grid, setGrid] = useComputed<Grid>([strategyId, bars, settings, capital])
+  const [grid, setGrid, gridStale] = useComputed<Grid>([strategyId, bars, settings, capital])
   const [progress, setProgress] = useState<number | null>(null)
   const [tip, setTip] = useState<{ px: number; py: number; text: string } | null>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -171,6 +171,7 @@ export function SweepPanel() {
         <AxisSelect label="y" value={y.key} options={numeric} exclude={x.key} onChange={setYKey} />
         <MetricPicker value={metric} onChange={setMetric} />
         <RunButton onClick={() => void run()} progress={progress} label="Run sweep" />
+        <StaleNote show={gridStale} />
         {grid && (
           <span className="text-[10px] text-gray-500">
             {grid.xs.length}×{grid.ys.length} = {grid.xs.length * grid.ys.length} backtests
@@ -209,6 +210,17 @@ export function SweepPanel() {
                 {tip.text}
               </div>
             )}
+          </div>
+          <div className="flex items-center gap-2 text-[10px] font-mono text-gray-500">
+            <span>{values.length ? fmtMetric(metric, Math.min(...values)) : ''}</span>
+            <span
+              className="h-2 w-40 rounded"
+              style={{
+                background: 'linear-gradient(to right, rgb(15,23,42), rgb(37,99,235), rgb(191,219,254))',
+              }}
+            />
+            <span>{values.length ? fmtMetric(metric, Math.max(...values)) : ''}</span>
+            <span className="text-gray-600 font-sans">brighter = better · scale is this grid's range, not absolute</span>
           </div>
           <div>
             <div className="text-[10px] uppercase tracking-wide text-gray-500 mb-1">
