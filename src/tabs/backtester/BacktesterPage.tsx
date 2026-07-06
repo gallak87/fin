@@ -14,6 +14,7 @@ import { TradeStats } from './components/TradeStats'
 import { drawdownFromPeak } from './engine/indicators'
 import { CustomCodePanel } from './components/CustomCodePanel'
 import { StratPills, FinalOutcome } from './components/StratPills'
+import { GauntletCard } from './components/GauntletCard'
 import { RobustnessLab } from './components/lab/RobustnessLab'
 import { CUSTOM_ID } from './engine/custom'
 
@@ -94,6 +95,7 @@ export default function BacktesterPage({ drawerOpen }: { drawerOpen: boolean }) 
             <PlaybackBar />
             <SignalStrip result={result} cursor={cursor} />
             <FinalOutcome />
+            <GauntletCard />
             <StratPills />
             <EquityChart
               result={result}
