@@ -44,6 +44,10 @@ Also shipped alongside: the gauntlet (one button runs the whole luck-test batter
 - **Heatmap color legend**: ramp is normalized to the grid's min/max with no scale shown — a dark cell might still beat B&H. Label the ramp ends with actual values.
 - **Engine tests in-repo**: the intrabar-fill/sizing/friction smoke tests live outside the repo; promote to vitest (`engine.test.ts`).
 
+## Lab backlog
+
+- **Sweepable engine knobs**: the heatmap only sweeps strategy params — stop %, trailing %, and regime MA have never had a plateau test (the BTC 7% stop is a hand-tuned local peak: ~$50M/$70M/$50M at 6/7/8%, i.e. ±3% CAGR — a gentle ridge, but formalize it). Let the sweep axis picker offer engine settings alongside strategy params.
+
 ## Phase 4 — Signals forward (paper trading + alerts)
 
 The point: prove the *process*, not the strategy — the strategy already passed the lab. Months of "did I follow it?" data before any real sizing.
