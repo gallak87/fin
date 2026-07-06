@@ -4,6 +4,7 @@ import { CUSTOM_ID } from '../engine/custom'
 import { useBacktestStore } from '../store'
 import { StrategyPicker } from './StrategyPicker'
 import { EngineSettingsPanel } from './EngineSettingsPanel'
+import { PresetList } from './PresetList'
 import { fmtMoney } from '../../../lib/format'
 
 interface ManifestEntry {
@@ -34,6 +35,10 @@ export function BacktestControls() {
 
   return (
     <div className="space-y-5">
+      <Section title="Start here — field-tested presets">
+        <PresetList />
+      </Section>
+
       <Section title="Ticker">
         {TICKERS.length === 0 ? (
           <div className="text-xs text-gray-500 border border-dashed border-gray-700 rounded-lg p-3">
