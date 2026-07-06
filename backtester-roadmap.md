@@ -34,7 +34,7 @@ This is what separates a toy from a tool — every feature here answers "was tha
 
 ## Polish backlog (from the post-Phase-3 layout review) (done)
 
-Also shipped alongside: saved-strategy pills (auto-labeled snapshots in localStorage, click to apply across tickers) and an end-of-tape outcome row (start → end equity vs B&H, no fast-forwarding).
+Also shipped alongside: the gauntlet (one button runs the whole luck-test battery → pass/warn/fail scorecard, prepopulates the lab panels), plain-words verdict line (win-win / drawdown-insurance-priced / noise-trading), sidebar playbook (bundled presets + saved setups), end-of-tape outcome row, land-at-end replay (play = replay), hero equity chart with inlaid metric pills.
 
 - **Time-axis mismatch**: price chart follows the cursor (trailing ~200 bars) while equity/drawdown pin to full history — three stacked charts, two time windows, no cue. Add a "you are here" cursor line on the full-range charts, or a shared-timeline toggle.
 - **Pin headline metrics**: CAGR / Sharpe / max DD vs B&H belong in the sticky playback bar — the tweak-slider → check-verdict loop currently costs a scroll round-trip.
