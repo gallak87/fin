@@ -23,6 +23,20 @@ function decodeBars(f: OhlcFile): Bar[] {
   return f.t.map((t, i) => ({ t, o: f.o[i], h: f.h[i], l: f.l[i], c: f.c[i], v: f.v[i] }))
 }
 
+const barsCache = new Map<string, Bar[]>()
+
+/** Load any bundled ticker's bars (cached) — used by the lab's multi-ticker runs. */
+export async function loadBars(ticker: string): Promise<Bar[] | null> {
+  const hit = barsCache.get(ticker)
+  if (hit) return hit
+  const load = OHLC_MODULES[`../../data/ohlc/${ticker}.json`]
+  if (!load) return null
+  const mod = (await load()) as { default: OhlcFile }
+  const bars = decodeBars(mod.default)
+  barsCache.set(ticker, bars)
+  return bars
+}
+
 interface BacktestStore {
   // persisted config
   ticker: string
@@ -40,10 +54,15 @@ interface BacktestStore {
   playing: boolean
   /** compile/runtime error from the custom strategy; null when it ran clean */
   customError: string | null
+  /** first out-of-sample bar index (walk-forward shading); null = no shading */
+  oosStart: number | null
 
   loadTicker: (ticker: string) => Promise<void>
   setStrategy: (id: string) => void
   setParam: (key: string, value: number) => void
+  /** apply several params at once (heatmap cell click, walk-forward apply) */
+  setParams: (patch: Record<string, number>) => void
+  setOosStart: (i: number | null) => void
   setCapital: (capital: number) => void
   setSpeed: (speed: number) => void
   setSetting: <K extends keyof EngineSettings>(key: K, value: EngineSettings[K]) => void
@@ -72,7 +91,13 @@ function rerun(s: BacktestStore): Partial<BacktestStore> {
     const strategy = s.strategyId === CUSTOM_ID ? compileCustomStrategy(s.customCode) : getStrategy(s.strategyId)
     const params = { ...defaultParams(strategy), ...(s.params[strategy.id] ?? {}) }
     const result = runBacktest(s.bars, strategy, params, s.capital, s.settings)
-    return { result, cursor: Math.min(result.warmup, s.bars.length - 1), playing: false, customError: null }
+    return {
+      result,
+      cursor: Math.min(result.warmup, s.bars.length - 1),
+      playing: false,
+      customError: null,
+      oosStart: null,
+    }
   } catch (e) {
     // bad custom code: keep the last good result on screen, surface the error
     return { playing: false, customError: e instanceof Error ? e.message : String(e) }
@@ -88,6 +113,7 @@ export const useBacktestStore = create<BacktestStore>()(
       cursor: 0,
       playing: false,
       customError: null,
+      oosStart: null,
 
       loadTicker: async (ticker) => {
         set({ ticker, bars: null, result: null, playing: false })
@@ -112,6 +138,16 @@ export const useBacktestStore = create<BacktestStore>()(
           const params = { ...s.params, [s.strategyId]: merged }
           return { params, ...rerun({ ...s, params }) }
         }),
+
+      setParams: (patch) =>
+        set((s) => {
+          const strategy = getStrategy(s.strategyId)
+          const merged = { ...defaultParams(strategy), ...(s.params[s.strategyId] ?? {}), ...patch }
+          const params = { ...s.params, [s.strategyId]: merged }
+          return { params, ...rerun({ ...s, params }) }
+        }),
+
+      setOosStart: (oosStart) => set({ oosStart }),
 
       setCapital: (capital) => set((s) => ({ capital, ...rerun({ ...s, capital }) })),
       setCustomCode: (customCode) => set((s) => ({ customCode, ...rerun({ ...s, customCode }) })),

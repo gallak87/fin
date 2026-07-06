@@ -1,5 +1,6 @@
-import { useEffect } from 'react'
+import { useEffect, useMemo } from 'react'
 import { useBacktestStore } from './store'
+import type { TimeRegion } from './components/useTimeRegions'
 import { BacktestControls } from './components/BacktestControls'
 import { PlaybackBar } from './components/PlaybackBar'
 import { SignalStrip } from './components/SignalStrip'
@@ -9,6 +10,7 @@ import { EquityChart } from './components/EquityChart'
 import { BacktestMetrics } from './components/BacktestMetrics'
 import { TradeLog } from './components/TradeLog'
 import { CustomCodePanel } from './components/CustomCodePanel'
+import { RobustnessLab } from './components/lab/RobustnessLab'
 import { CUSTOM_ID } from './engine/custom'
 
 function Skeleton() {
@@ -26,8 +28,17 @@ function Skeleton() {
 }
 
 export default function BacktesterPage({ drawerOpen }: { drawerOpen: boolean }) {
-  const { bars, result, cursor, ticker, strategyId } = useBacktestStore()
+  const { bars, result, cursor, ticker, strategyId, oosStart } = useBacktestStore()
   const loadTicker = useBacktestStore((s) => s.loadTicker)
+
+  // walk-forward: shade the out-of-sample region on both charts
+  const regions = useMemo<TimeRegion[]>(
+    () =>
+      oosStart != null && bars
+        ? [{ from: oosStart, to: bars.length - 1, color: 'rgba(244,114,182,0.07)', label: 'out-of-sample' }]
+        : [],
+    [oosStart, bars],
+  )
 
   // first visit (nothing persisted → onRehydrateStorage may fire before this
   // lazy chunk mounts): make sure data gets loaded
@@ -58,11 +69,12 @@ export default function BacktesterPage({ drawerOpen }: { drawerOpen: boolean }) 
           <>
             <PlaybackBar />
             <SignalStrip result={result} cursor={cursor} />
-            <PriceChart result={result} cursor={cursor} />
+            <PriceChart result={result} cursor={cursor} regions={regions} />
             {result.run.strip && <IndicatorStrip result={result} cursor={cursor} />}
-            <EquityChart result={result} cursor={cursor} />
+            <EquityChart result={result} cursor={cursor} regions={regions} />
             <BacktestMetrics result={result} cursor={cursor} />
             <TradeLog result={result} cursor={cursor} />
+            <RobustnessLab />
           </>
         )}
       </main>

@@ -10,11 +10,21 @@ import {
 } from 'lightweight-charts'
 import type { BacktestResult } from '../engine/types'
 import { useChart, toTime } from './useChart'
+import { useTimeRegions, type TimeRegion } from './useTimeRegions'
 
 const VIEW_BARS = 200 // keep roughly this many recent bars in view while playing
 
-export function PriceChart({ result, cursor }: { result: BacktestResult; cursor: number }) {
+export function PriceChart({
+  result,
+  cursor,
+  regions = [],
+}: {
+  result: BacktestResult
+  cursor: number
+  regions?: TimeRegion[]
+}) {
   const { containerRef, chart } = useChart()
+  useTimeRegions(chart, containerRef, regions)
   const candleRef = useRef<ISeriesApi<'Candlestick'> | null>(null)
   const overlayRefs = useRef<ISeriesApi<'Line'>[]>([])
   const markersRef = useRef<ISeriesMarkersPluginApi<Time> | null>(null)
@@ -116,7 +126,7 @@ export function PriceChart({ result, cursor }: { result: BacktestResult; cursor:
 
   return (
     <div className="bg-gray-900 rounded-xl border border-gray-800 p-2">
-      <div ref={containerRef} className="h-[300px] sm:h-[380px]" />
+      <div ref={containerRef} className="relative h-[300px] sm:h-[380px]" />
     </div>
   )
 }

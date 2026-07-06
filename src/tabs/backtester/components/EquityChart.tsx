@@ -2,12 +2,22 @@ import { useEffect, useRef } from 'react'
 import { LineSeries, type ISeriesApi } from 'lightweight-charts'
 import type { BacktestResult } from '../engine/types'
 import { useChart, toTime } from './useChart'
+import { useTimeRegions, type TimeRegion } from './useTimeRegions'
 import { fmtK } from '../../../lib/format'
 
-export function EquityChart({ result, cursor }: { result: BacktestResult; cursor: number }) {
+export function EquityChart({
+  result,
+  cursor,
+  regions = [],
+}: {
+  result: BacktestResult
+  cursor: number
+  regions?: TimeRegion[]
+}) {
   const { containerRef, chart } = useChart({
     localization: { priceFormatter: (p: number) => fmtK(p) },
   })
+  useTimeRegions(chart, containerRef, regions)
   const stratRef = useRef<ISeriesApi<'Line'> | null>(null)
   const benchRef = useRef<ISeriesApi<'Line'> | null>(null)
   const prevCursor = useRef(-1)
@@ -49,24 +59,18 @@ export function EquityChart({ result, cursor }: { result: BacktestResult; cursor
     const bench = benchRef.current
     if (!chart || !strat || !bench) return
     const { bars, equity, benchmark } = result
-    const point = (arr: number[], i: number) => ({ time: toTime(bars[i].t), value: arr[i] })
+    if (cursor === prevCursor.current) return
 
-    const prev = prevCursor.current
-    if (prev !== -1 && cursor > prev && cursor - prev <= 50) {
-      // whitespace points past the cursor already exist → historical update
-      for (let i = prev + 1; i <= cursor; i++) {
-        strat.update(point(equity, i), true)
-        bench.update(point(benchmark, i), true)
-      }
-    } else if (cursor !== prev) {
-      // full-range data with whitespace beyond the cursor keeps the time axis
-      // pinned to the whole period instead of sliding as the tape plays
-      const points = (arr: number[]) =>
-        bars.map((b, i) => (i <= cursor ? point(arr, i) : { time: toTime(b.t) }))
-      strat.setData(points(equity))
-      bench.setData(points(benchmark))
-      chart.timeScale().fitContent()
-    }
+    // full-range data with whitespace beyond the cursor keeps the time axis
+    // pinned to the whole period instead of sliding as the tape plays.
+    // Always rebuild: update(point, true) can't turn a whitespace point into
+    // data, so the incremental path silently no-ops during playback.
+    const point = (arr: number[], i: number) => ({ time: toTime(bars[i].t), value: arr[i] })
+    const points = (arr: number[]) =>
+      bars.map((b, i) => (i <= cursor ? point(arr, i) : { time: toTime(b.t) }))
+    strat.setData(points(equity))
+    bench.setData(points(benchmark))
+    if (prevCursor.current === -1) chart.timeScale().fitContent()
     prevCursor.current = cursor
   }, [chart, result, cursor])
 
