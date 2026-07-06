@@ -53,9 +53,10 @@ export function PlaybackBar() {
   if (!bars || !result) return null
   const warmup = result.warmup
   const date = bars[cursor]?.t ?? ''
+  const atEnd = cursor >= bars.length - 1
 
   const btn =
-    'px-2 py-1 text-xs text-gray-400 border border-gray-700 rounded hover:text-white hover:border-gray-500'
+    'w-8 h-8 rounded-full bg-gray-800 text-gray-300 hover:bg-gray-700 hover:text-white text-xs flex items-center justify-center shrink-0'
 
   return (
     <div className="sticky top-0 z-10 bg-gray-950/90 backdrop-blur rounded-xl border border-gray-800 px-3 py-2 flex flex-wrap items-center gap-2">
@@ -67,10 +68,10 @@ export function PlaybackBar() {
       </button>
       <button
         onClick={playing ? pause : play}
-        title={playing ? 'Pause' : 'Play'}
+        title={playing ? 'Pause' : atEnd ? 'Replay from the start' : 'Play'}
         className="w-9 h-9 rounded-full bg-blue-600 hover:bg-blue-500 text-white text-sm flex items-center justify-center shrink-0"
       >
-        {playing ? '❚❚' : '▶'}
+        {playing ? '❚❚' : atEnd ? '↻' : '▶'}
       </button>
       <button className={btn} onClick={() => stepFwd()} title="Step forward one day">
         +1

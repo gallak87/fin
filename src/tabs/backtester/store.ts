@@ -123,9 +123,10 @@ function rerun(s: BacktestStore): Partial<BacktestStore> {
     const strategy = s.strategyId === CUSTOM_ID ? compileCustomStrategy(s.customCode) : getStrategy(s.strategyId)
     const params = { ...defaultParams(strategy), ...(s.params[strategy.id] ?? {}) }
     const result = runBacktest(s.bars, strategy, params, s.capital, s.settings)
+    // land at the end of the tape: the full result is the headline, replay is opt-in
     return {
       result,
-      cursor: Math.min(result.warmup, s.bars.length - 1),
+      cursor: s.bars.length - 1,
       playing: false,
       customError: null,
       oosStart: null,
