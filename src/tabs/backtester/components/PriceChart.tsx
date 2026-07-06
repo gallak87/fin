@@ -11,8 +11,7 @@ import {
 import type { BacktestResult } from '../engine/types'
 import { useChart, toTime } from './useChart'
 import { useTimeRegions, type TimeRegion } from './useTimeRegions'
-
-const VIEW_BARS = 200 // keep roughly this many recent bars in view while playing
+import { useChartSync } from './chartSync'
 
 export function PriceChart({
   result,
@@ -23,8 +22,12 @@ export function PriceChart({
   cursor: number
   regions?: TimeRegion[]
 }) {
-  const { containerRef, chart } = useChart()
+  const { containerRef, chart } = useChart({
+    // appending candles during playback must not scroll the pinned view
+    timeScale: { borderColor: '#374151', shiftVisibleRangeOnNewBar: false },
+  })
   useTimeRegions(chart, containerRef, regions)
+  useChartSync(chart)
   const candleRef = useRef<ISeriesApi<'Candlestick'> | null>(null)
   const overlayRefs = useRef<ISeriesApi<'Line'>[]>([])
   const markersRef = useRef<ISeriesMarkersPluginApi<Time> | null>(null)
@@ -92,9 +95,14 @@ export function PriceChart({
         overlayRefs.current.forEach((s, k) => s.update(toPoint(overlays[k].values, i)))
       }
     } else if (cursor !== prev) {
+      // preserve the user's zoom across rebuilds; anchor to the full window on a fresh result
+      const ts = chart.timeScale()
+      const saved = prev === -1 ? null : ts.getVisibleLogicalRange()
       const idx = Array.from({ length: cursor + 1 }, (_, i) => i)
       candle.setData(idx.map(toCandle))
       overlayRefs.current.forEach((s, k) => s.setData(idx.map((i) => toPoint(overlays[k].values, i))))
+      if (saved) ts.setVisibleLogicalRange(saved)
+      else ts.setVisibleLogicalRange({ from: -1, to: bars.length })
     }
     prevCursor.current = cursor
 
@@ -120,8 +128,6 @@ export function PriceChart({
       }
     }
     markersRef.current?.setMarkers(markers)
-
-    chart.timeScale().setVisibleLogicalRange({ from: cursor - VIEW_BARS, to: cursor + 5 })
   }, [chart, result, cursor])
 
   return (

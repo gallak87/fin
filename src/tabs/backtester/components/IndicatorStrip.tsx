@@ -2,13 +2,15 @@ import { useEffect, useRef } from 'react'
 import { LineSeries, type ISeriesApi } from 'lightweight-charts'
 import type { BacktestResult } from '../engine/types'
 import { useChart, toTime } from './useChart'
+import { useChartSync } from './chartSync'
 
 /** Compact oscillator pane (RSI, MACD, ROC, …) with guide lines, under the price chart. */
 export function IndicatorStrip({ result, cursor }: { result: BacktestResult; cursor: number }) {
   const { containerRef, chart } = useChart({
     rightPriceScale: { borderColor: '#374151' },
-    timeScale: { visible: false },
+    timeScale: { visible: false, shiftVisibleRangeOnNewBar: false },
   })
+  useChartSync(chart)
   const seriesRefs = useRef<ISeriesApi<'Line'>[]>([])
   const prevCursor = useRef(-1)
 
@@ -65,11 +67,15 @@ export function IndicatorStrip({ result, cursor }: { result: BacktestResult; cur
       for (let i = prev + 1; i <= cursor; i++)
         seriesRefs.current.forEach((s, k) => s.update(toPoint(strip.series[k].values, i)))
     } else if (cursor !== prev) {
+      // preserve zoom across rebuilds; anchor to the full window on a fresh result
+      const ts = chart.timeScale()
+      const saved = prev === -1 ? null : ts.getVisibleLogicalRange()
       const idx = Array.from({ length: cursor + 1 }, (_, i) => i)
       seriesRefs.current.forEach((s, k) => s.setData(idx.map((i) => toPoint(strip.series[k].values, i))))
+      if (saved) ts.setVisibleLogicalRange(saved)
+      else ts.setVisibleLogicalRange({ from: -1, to: bars.length })
     }
     prevCursor.current = cursor
-    chart.timeScale().setVisibleLogicalRange({ from: cursor - 200, to: cursor + 5 })
   }, [chart, result, strip, cursor])
 
   if (!strip) return null

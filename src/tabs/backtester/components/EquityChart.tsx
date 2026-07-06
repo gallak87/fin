@@ -3,6 +3,7 @@ import { LineSeries, type ISeriesApi } from 'lightweight-charts'
 import type { BacktestResult } from '../engine/types'
 import { useChart, toTime } from './useChart'
 import { useCursorLine, useTimeRegions, type TimeRegion } from './useTimeRegions'
+import { useChartSync } from './chartSync'
 import { fmtK } from '../../../lib/format'
 
 export function EquityChart({
@@ -22,6 +23,7 @@ export function EquityChart({
   })
   useTimeRegions(chart, containerRef, regions)
   useCursorLine(chart, containerRef, cursor)
+  useChartSync(chart)
   const stratRef = useRef<ISeriesApi<'Line'> | null>(null)
   const benchRef = useRef<ISeriesApi<'Line'> | null>(null)
   const prevCursor = useRef(-1)
@@ -72,11 +74,14 @@ export function EquityChart({
     const point = (arr: number[], i: number) => ({ time: toTime(bars[i].t), value: arr[i] })
     const points = (arr: number[]) =>
       bars.map((b, i) => (i <= cursor ? point(arr, i) : { time: toTime(b.t) }))
+    // setData scrolls to the newest point — preserve the user's zoom across
+    // rebuilds, anchor to the full window on a fresh result
+    const ts = chart.timeScale()
+    const saved = prevCursor.current === -1 ? null : ts.getVisibleLogicalRange()
     strat.setData(points(equity))
     bench.setData(points(benchmark))
-    // setData scrolls to the newest point (the whitespace far right) — re-pin
-    // the view to the full range every time
-    chart.timeScale().fitContent()
+    if (saved) ts.setVisibleLogicalRange(saved)
+    else ts.fitContent()
     prevCursor.current = cursor
   }, [chart, result, cursor])
 

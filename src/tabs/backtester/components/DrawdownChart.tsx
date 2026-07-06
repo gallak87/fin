@@ -3,6 +3,7 @@ import { AreaSeries, type ISeriesApi } from 'lightweight-charts'
 import type { BacktestResult } from '../engine/types'
 import { useChart, toTime } from './useChart'
 import { useCursorLine } from './useTimeRegions'
+import { useChartSync } from './chartSync'
 
 /** Underwater plot: % below the running equity peak, revealed with the tape. */
 export function DrawdownChart({ result, cursor }: { result: BacktestResult; cursor: number }) {
@@ -13,6 +14,7 @@ export function DrawdownChart({ result, cursor }: { result: BacktestResult; curs
   const seriesRef = useRef<ISeriesApi<'Area'> | null>(null)
   const prevCursor = useRef(-1)
   useCursorLine(chart, containerRef, cursor)
+  useChartSync(chart)
 
   // growth index for DCA so contributions don't mask drawdowns
   const dd = useMemo(() => {
@@ -55,11 +57,14 @@ export function DrawdownChart({ result, cursor }: { result: BacktestResult; curs
     if (!chart || !s) return
     if (cursor === prevCursor.current) return
     const { bars } = result
+    // preserve the user's zoom across rebuilds; anchor to the window on a fresh result
+    const ts = chart.timeScale()
+    const saved = prevCursor.current === -1 ? null : ts.getVisibleLogicalRange()
     s.setData(
       bars.map((b, i) => (i <= cursor ? { time: toTime(b.t), value: dd[i] } : { time: toTime(b.t) })),
     )
-    // setData scrolls to the newest point (whitespace far right) — re-pin
-    chart.timeScale().fitContent()
+    if (saved) ts.setVisibleLogicalRange(saved)
+    else ts.fitContent()
     prevCursor.current = cursor
   }, [chart, result, dd, cursor])
 
