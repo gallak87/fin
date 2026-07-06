@@ -35,7 +35,7 @@ export function BacktestControls() {
 
   return (
     <div className="space-y-5">
-      <Section title="Start here — field-tested presets">
+      <Section title="Playbook — presets & your saves">
         <PresetList />
       </Section>
 

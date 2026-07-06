@@ -13,7 +13,7 @@ import { TradeLog } from './components/TradeLog'
 import { TradeStats } from './components/TradeStats'
 import { drawdownFromPeak } from './engine/indicators'
 import { CustomCodePanel } from './components/CustomCodePanel'
-import { StratPills, FinalOutcome } from './components/StratPills'
+import { FinalOutcome } from './components/FinalOutcome'
 import { GauntletCard } from './components/GauntletCard'
 import { CUSTOM_ID } from './engine/custom'
 
@@ -95,7 +95,6 @@ export default function BacktesterPage({ drawerOpen }: { drawerOpen: boolean }) 
             <SignalStrip result={result} cursor={cursor} />
             <FinalOutcome />
             <GauntletCard />
-            <StratPills />
             <EquityChart
               result={result}
               cursor={cursor}
