@@ -37,9 +37,9 @@ export const PRESETS: Preset[] = [
   {
     id: 'spy-mid-cross',
     ticker: 'SPY',
-    name: 'MA 10/75',
+    name: 'MA 30/180',
     strategyId: 'ma-cross',
-    params: { fast: 10, slow: 75, useEma: 0 },
+    params: { fast: 30, slow: 180, useEma: 0 },
     settings: SL7,
     blurb: 'Mid-tempo cross for the S&P — near-matches buy & hold with a far shallower worst drawdown. Insurance, cheap.',
   },
