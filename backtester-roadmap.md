@@ -47,6 +47,9 @@ Also shipped alongside: the gauntlet (one button runs the whole luck-test batter
 ## Lab backlog
 
 - **Sweepable engine knobs**: the heatmap only sweeps strategy params — stop %, trailing %, and regime MA have never had a plateau test (the BTC 7% stop is a hand-tuned local peak: ~$50M/$70M/$50M at 6/7/8%, i.e. ±3% CAGR — a gentle ridge, but formalize it). Let the sweep axis picker offer engine settings alongside strategy params.
+- **Knobs ↔ metrics distance** (pick one):
+  - **Option A — sticky Settings**: pin the active strategy's sliders (+ exits summary) `sticky bottom-0` in the sidebar so they never scroll away; pairs with the CAGR/Sh/DD already pinned in the playback bar. Zero right-column cost, ~10 lines.
+  - **Option B — tuning strip**: the active strategy's 2–3 params as compact horizontal sliders in a slim row under the gauntlet card, right next to the metric pills. Tightest drag→pills loop; costs ~48px of chart column and blurs the inputs-left/outputs-right split.
 
 ## Phase 4 — Signals forward (paper trading + alerts)
 
