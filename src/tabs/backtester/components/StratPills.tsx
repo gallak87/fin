@@ -1,8 +1,87 @@
-import { useBacktestStore } from '../store'
+import { useEffect, useState } from 'react'
+import { useBacktestStore, loadBars } from '../store'
 import { CUSTOM_ID } from '../engine/custom'
 import { getStrategy, defaultParams } from '../engine/strategies'
-import { fmtK } from '../../../lib/format'
+import { runBacktest } from '../engine/engine'
+import { PRESETS, type Preset } from '../engine/presets'
+import { fmtK, fmtPct } from '../../../lib/format'
 import { verdict } from '../engine/verdict'
+
+interface PresetStats {
+  totalReturn: number
+  end: number
+  maxDrawdown: number
+}
+
+// computed once per preset+capital; bundled data is static
+const presetStatsCache = new Map<string, PresetStats>()
+
+function usePresetStats(preset: Preset, capital: number): PresetStats | null {
+  const key = `${preset.id}:${capital}`
+  const [, bump] = useState(0)
+  useEffect(() => {
+    if (presetStatsCache.has(key)) return
+    let alive = true
+    void (async () => {
+      const bars = await loadBars(preset.ticker)
+      if (!bars) return
+      const strategy = getStrategy(preset.strategyId)
+      const r = runBacktest(bars, strategy, { ...defaultParams(strategy), ...preset.params }, capital, preset.settings)
+      presetStatsCache.set(key, {
+        totalReturn: r.metrics.totalReturn,
+        end: r.equity[r.equity.length - 1],
+        maxDrawdown: r.metrics.maxDrawdown,
+      })
+      if (alive) bump((n) => n + 1) // re-render → cache hit below
+    })()
+    return () => {
+      alive = false
+    }
+  }, [key, preset, capital])
+  return presetStatsCache.get(key) ?? null
+}
+
+function PresetPill({ preset }: { preset: Preset }) {
+  const ticker = useBacktestStore((s) => s.ticker)
+  const strategyId = useBacktestStore((s) => s.strategyId)
+  const params = useBacktestStore((s) => s.params)
+  const settings = useBacktestStore((s) => s.settings)
+  const capital = useBacktestStore((s) => s.capital)
+  const applyPreset = useBacktestStore((s) => s.applyPreset)
+  const stats = usePresetStats(preset, capital)
+
+  const current =
+    strategyId === CUSTOM_ID ? {} : { ...defaultParams(getStrategy(strategyId)), ...(params[strategyId] ?? {}) }
+  const active =
+    ticker === preset.ticker &&
+    strategyId === preset.strategyId &&
+    JSON.stringify(current) === JSON.stringify(preset.params) &&
+    JSON.stringify(settings) === JSON.stringify(preset.settings)
+
+  return (
+    <button
+      onClick={() => applyPreset(preset)}
+      title={preset.blurb}
+      className={`inline-flex items-baseline gap-1.5 rounded-full border px-2.5 py-1 text-xs font-mono tabular-nums ${
+        active ? 'border-blue-500 bg-blue-500/10' : 'border-gray-700/80 bg-gray-800/30 hover:border-gray-500'
+      }`}
+    >
+      <span className="font-semibold text-blue-300">{preset.ticker}</span>
+      <span className="text-gray-300">{preset.name}</span>
+      {stats && (
+        <>
+          <span className={stats.totalReturn >= 0 ? 'text-green-400' : 'text-red-400'}>
+            {stats.totalReturn >= 10
+              ? `+${Math.round(stats.totalReturn * 100).toLocaleString()}%`
+              : fmtPct(stats.totalReturn, 0)}
+          </span>
+          <span className="text-gray-400">{fmtK(stats.end)}</span>
+          <span className="text-red-400/70">DD {fmtPct(stats.maxDrawdown, 0)}</span>
+        </>
+      )}
+    </button>
+  )
+}
 
 const pctFmt = (pct: number) =>
   `${pct >= 0 ? '+' : ''}${pct >= 10 ? `${Math.round(pct * 100).toLocaleString()}%` : `${(pct * 100).toFixed(1)}%`}`
@@ -75,6 +154,10 @@ export function StratPills() {
 
   return (
     <div className="flex flex-wrap items-center gap-1.5">
+      {PRESETS.map((p) => (
+        <PresetPill key={p.id} preset={p} />
+      ))}
+      <span className="w-px h-4 bg-gray-800 mx-0.5" />
       <button
         onClick={saveCurrentStrat}
         disabled={alreadySaved}

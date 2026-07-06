@@ -6,6 +6,7 @@ import { runBacktest, DEFAULT_SETTINGS } from './engine/engine'
 import { getStrategy, defaultParams, STRATEGIES } from './engine/strategies'
 import { CUSTOM_ID, DEFAULT_CUSTOM_CODE, compileCustomStrategy } from './engine/custom'
 import { autoLabel } from './engine/label'
+import type { Preset } from './engine/presets'
 
 export interface SavedStrat {
   id: string
@@ -87,6 +88,8 @@ interface BacktestStore {
   setSetting: <K extends keyof EngineSettings>(key: K, value: EngineSettings[K]) => void
   setCustomCode: (code: string) => void
   saveCurrentStrat: () => void
+  /** apply a bundled preset: ticker + strategy + params + settings in one go */
+  applyPreset: (p: Preset) => void
   applyStrat: (id: string) => void
   deleteStrat: (id: string) => void
   play: () => void
@@ -210,6 +213,15 @@ export const useBacktestStore = create<BacktestStore>()(
           }
           return { savedStrats: [...s.savedStrats, strat] }
         }),
+
+      applyPreset: (p) => {
+        set((s) => ({
+          strategyId: p.strategyId,
+          params: { ...s.params, [p.strategyId]: { ...p.params } },
+          settings: { ...p.settings },
+        }))
+        void get().loadTicker(p.ticker) // reruns once the bars land
+      },
 
       applyStrat: (id) =>
         set((s) => {
