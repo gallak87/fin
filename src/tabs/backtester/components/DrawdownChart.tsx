@@ -56,7 +56,8 @@ export function DrawdownChart({ result, cursor }: { result: BacktestResult; curs
     s.setData(
       bars.map((b, i) => (i <= cursor ? { time: toTime(b.t), value: dd[i] } : { time: toTime(b.t) })),
     )
-    if (prevCursor.current === -1) chart.timeScale().fitContent()
+    // setData scrolls to the newest point (whitespace far right) — re-pin
+    chart.timeScale().fitContent()
     prevCursor.current = cursor
   }, [chart, result, dd, cursor])
 

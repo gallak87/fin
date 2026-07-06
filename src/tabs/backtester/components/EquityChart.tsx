@@ -70,7 +70,9 @@ export function EquityChart({
       bars.map((b, i) => (i <= cursor ? point(arr, i) : { time: toTime(b.t) }))
     strat.setData(points(equity))
     bench.setData(points(benchmark))
-    if (prevCursor.current === -1) chart.timeScale().fitContent()
+    // setData scrolls to the newest point (the whitespace far right) — re-pin
+    // the view to the full range every time
+    chart.timeScale().fitContent()
     prevCursor.current = cursor
   }, [chart, result, cursor])
 
@@ -85,7 +87,7 @@ export function EquityChart({
           <span className="inline-block w-3 h-0.5 bg-gray-500" /> buy &amp; hold
         </span>
       </div>
-      <div ref={containerRef} className="h-[200px]" />
+      <div ref={containerRef} className="relative h-[200px]" />
     </div>
   )
 }
