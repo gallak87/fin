@@ -6,7 +6,7 @@ Direction: an experimentation lab, not a trading terminal. Optimize for "try an 
 
 Bar-by-bar replay, 4 canned strategies, metrics vs buy & hold, trade log.
 
-## Phase 2 — Strategy customization
+## Phase 2 — Strategy customization (done)
 
 The current `Strategy` interface (init → signalAt/explainAt) already supports all of this; it's about authoring, not engine rewrites.
 
@@ -18,7 +18,7 @@ The current `Strategy` interface (init → signalAt/explainAt) already supports 
 - **Friction**: per-trade fee + slippage bps setting. Default on, small — free trading flatters high-churn strategies.
 - **Custom JS strategy** (escape hatch): a code editor for `(bars, i, state) => signal` with the built-in indicators importable. Sandboxed via Function constructor; run on a worker if it gets slow.
 
-## Phase 3 — Robustness lab (the anti-overfitting phase)
+## Phase 3 — Robustness lab (the anti-overfitting phase) (done)
 
 This is what separates a toy from a tool — every feature here answers "was that result luck?"
 

@@ -21,7 +21,7 @@ export function BacktestMetrics({ result, cursor }: { result: BacktestResult; cu
   const { m, b } = useMemo(() => {
     const ppy = tradingDaysPerYear(result.bars)
     return {
-      m: computeMetrics(result.equity, result.bars, result.trades, ppy, cursor, result.contributed),
+      m: computeMetrics(result.equity, result.bars, result.trades, ppy, cursor, result.contributed, result.position),
       b: computeMetrics(result.benchmark, result.bars, [], ppy, cursor),
     }
   }, [result, cursor])
@@ -30,7 +30,7 @@ export function BacktestMetrics({ result, cursor }: { result: BacktestResult; cu
     a === bench ? 'neutral' : (a > bench) === higherBetter ? 'good' : 'bad'
 
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
+    <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2">
       <Card
         label="Total return"
         value={fmtPct(m.totalReturn, 0)}
@@ -62,6 +62,12 @@ export function BacktestMetrics({ result, cursor }: { result: BacktestResult; cu
         tone="neutral"
       />
       <Card label="Trades" value={String(m.numTrades)} sub="entries so far" tone="neutral" />
+      <Card
+        label="Exposure"
+        value={m.exposure == null ? '—' : `${Math.round(m.exposure * 100)}%`}
+        sub="time in market"
+        tone="neutral"
+      />
     </div>
   )
 }

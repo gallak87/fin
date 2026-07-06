@@ -29,7 +29,13 @@ export function TradeLog({ result, cursor }: { result: BacktestResult; cursor: n
                 <th className="px-2 py-1.5 font-normal text-right">Exit $</th>
                 <th className="px-2 py-1.5 font-normal">Why</th>
                 <th className="px-2 py-1.5 font-normal text-right">P&amp;L</th>
-                <th className="px-3 py-1.5 font-normal text-right">P&amp;L %</th>
+                <th className="px-2 py-1.5 font-normal text-right">P&amp;L %</th>
+                <th className="px-2 py-1.5 font-normal text-right" title="Max adverse excursion — worst point while held">
+                  MAE
+                </th>
+                <th className="px-3 py-1.5 font-normal text-right" title="Max favorable excursion — best point while held">
+                  MFE
+                </th>
               </tr>
             </thead>
             <tbody className="text-gray-300">
@@ -48,8 +54,14 @@ export function TradeLog({ result, cursor }: { result: BacktestResult; cursor: n
                     <td className={`px-2 py-1 text-right ${closed ? pnlColor : 'text-gray-500'}`}>
                       {closed ? money(t.pnl!) : '—'}
                     </td>
-                    <td className={`px-3 py-1 text-right ${closed ? pnlColor : 'text-gray-500'}`}>
+                    <td className={`px-2 py-1 text-right ${closed ? pnlColor : 'text-gray-500'}`}>
                       {closed ? `${(t.pnlPct! * 100).toFixed(1)}%` : '—'}
+                    </td>
+                    <td className="px-2 py-1 text-right text-red-400/70">
+                      {closed && t.maePct != null ? `${(t.maePct * 100).toFixed(1)}%` : '—'}
+                    </td>
+                    <td className="px-3 py-1 text-right text-green-400/70">
+                      {closed && t.mfePct != null ? `+${(t.mfePct * 100).toFixed(1)}%` : '—'}
                     </td>
                   </tr>
                 )
