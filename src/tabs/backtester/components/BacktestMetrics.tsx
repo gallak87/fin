@@ -5,19 +5,14 @@ import { fmtPct } from '../../../lib/format'
 
 type Tone = 'good' | 'bad' | 'neutral'
 
-function Card({ label, value, sub, tone }: { label: string; value: string; sub?: string; tone: Tone }) {
-  const color = tone === 'good' ? 'text-green-400' : tone === 'bad' ? 'text-red-400' : 'text-gray-200'
-  return (
-    <div className="bg-gray-900 rounded-xl border border-gray-800 px-3 py-2">
-      <div className="text-[10px] uppercase tracking-wide text-gray-500">{label}</div>
-      <div className={`font-mono text-sm tabular-nums ${color}`}>{value}</div>
-      {sub && <div className="text-[10px] text-gray-500">{sub}</div>}
-    </div>
-  )
-}
+const toneCls = (t: Tone) =>
+  t === 'good' ? 'text-green-400' : t === 'bad' ? 'text-red-400' : 'text-gray-200'
 
-/** Metrics as of the playback cursor — numbers fill in while the tape plays. */
-export function BacktestMetrics({ result, cursor }: { result: BacktestResult; cursor: number }) {
+/**
+ * Cursor-linked metrics as compact pills, overlaid on the equity (hero)
+ * chart. Values fill in while the tape plays; hover for the B&H comparison.
+ */
+export function MetricsPills({ result, cursor }: { result: BacktestResult; cursor: number }) {
   const { m, b } = useMemo(() => {
     const ppy = tradingDaysPerYear(result.bars)
     return {
@@ -29,45 +24,53 @@ export function BacktestMetrics({ result, cursor }: { result: BacktestResult; cu
   const vs = (a: number, bench: number, higherBetter = true): Tone =>
     a === bench ? 'neutral' : (a > bench) === higherBetter ? 'good' : 'bad'
 
+  const pills: { label: string; value: string; tone: Tone; title?: string }[] = [
+    {
+      label: 'total',
+      value: fmtPct(m.totalReturn, 0),
+      tone: vs(m.totalReturn, b.totalReturn),
+      title: `B&H: ${fmtPct(b.totalReturn, 0)}`,
+    },
+    { label: 'cagr', value: fmtPct(m.cagr), tone: vs(m.cagr, b.cagr), title: `B&H: ${fmtPct(b.cagr)}` },
+    {
+      label: 'max dd',
+      value: fmtPct(m.maxDrawdown),
+      tone: vs(m.maxDrawdown, b.maxDrawdown),
+      title: `B&H: ${fmtPct(b.maxDrawdown)}`,
+    },
+    {
+      label: 'sharpe',
+      value: m.sharpe.toFixed(2),
+      tone: vs(m.sharpe, b.sharpe),
+      title: `B&H: ${b.sharpe.toFixed(2)}`,
+    },
+    {
+      label: 'win',
+      value: m.winRate == null ? '—' : `${Math.round(m.winRate * 100)}%`,
+      tone: 'neutral',
+      title: 'closed trades',
+    },
+    { label: 'trades', value: String(m.numTrades), tone: 'neutral', title: 'entries so far' },
+    {
+      label: 'exp',
+      value: m.exposure == null ? '—' : `${Math.round(m.exposure * 100)}%`,
+      tone: 'neutral',
+      title: 'time in market',
+    },
+  ]
+
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2">
-      <Card
-        label="Total return"
-        value={fmtPct(m.totalReturn, 0)}
-        sub={`B&H: ${fmtPct(b.totalReturn, 0)}`}
-        tone={vs(m.totalReturn, b.totalReturn)}
-      />
-      <Card
-        label="CAGR"
-        value={fmtPct(m.cagr)}
-        sub={`B&H: ${fmtPct(b.cagr)}`}
-        tone={vs(m.cagr, b.cagr)}
-      />
-      <Card
-        label="Max drawdown"
-        value={fmtPct(m.maxDrawdown)}
-        sub={`B&H: ${fmtPct(b.maxDrawdown)}`}
-        tone={vs(m.maxDrawdown, b.maxDrawdown)}
-      />
-      <Card
-        label="Sharpe"
-        value={m.sharpe.toFixed(2)}
-        sub={`B&H: ${b.sharpe.toFixed(2)}`}
-        tone={vs(m.sharpe, b.sharpe)}
-      />
-      <Card
-        label="Win rate"
-        value={m.winRate == null ? '—' : `${Math.round(m.winRate * 100)}%`}
-        sub="closed trades"
-        tone="neutral"
-      />
-      <Card label="Trades" value={String(m.numTrades)} sub="entries so far" tone="neutral" />
-      <Card
-        label="Exposure"
-        value={m.exposure == null ? '—' : `${Math.round(m.exposure * 100)}%`}
-        sub="time in market"
-        tone="neutral"
-      />
+    <div className="flex flex-wrap gap-1">
+      {pills.map((p) => (
+        <span
+          key={p.label}
+          title={p.title}
+          className="inline-flex items-baseline gap-1 rounded-full bg-gray-950/85 border border-gray-800 px-2 py-0.5 backdrop-blur-[2px]"
+        >
+          <span className="text-[9px] uppercase tracking-wide text-gray-500">{p.label}</span>
+          <span className={`font-mono text-[11px] tabular-nums ${toneCls(p.tone)}`}>{p.value}</span>
+        </span>
+      ))}
     </div>
   )
 }

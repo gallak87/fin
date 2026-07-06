@@ -7,7 +7,7 @@ import { SignalStrip } from './components/SignalStrip'
 import { PriceChart } from './components/PriceChart'
 import { IndicatorStrip } from './components/IndicatorStrip'
 import { EquityChart } from './components/EquityChart'
-import { BacktestMetrics } from './components/BacktestMetrics'
+import { MetricsPills } from './components/BacktestMetrics'
 import { DrawdownChart } from './components/DrawdownChart'
 import { TradeLog } from './components/TradeLog'
 import { TradeStats } from './components/TradeStats'
@@ -95,11 +95,15 @@ export default function BacktesterPage({ drawerOpen }: { drawerOpen: boolean }) 
             <SignalStrip result={result} cursor={cursor} />
             <FinalOutcome />
             <StratPills />
+            <EquityChart
+              result={result}
+              cursor={cursor}
+              regions={regions}
+              overlay={<MetricsPills result={result} cursor={cursor} />}
+            />
+            <DrawdownChart result={result} cursor={cursor} />
             <PriceChart result={result} cursor={cursor} regions={regions} />
             {result.run.strip && <IndicatorStrip result={result} cursor={cursor} />}
-            <EquityChart result={result} cursor={cursor} regions={regions} />
-            <DrawdownChart result={result} cursor={cursor} />
-            <BacktestMetrics result={result} cursor={cursor} />
             <TradeLog result={result} cursor={cursor} />
             <TradeStats result={result} cursor={cursor} />
             <RobustnessLab />

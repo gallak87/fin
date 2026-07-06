@@ -9,10 +9,13 @@ export function EquityChart({
   result,
   cursor,
   regions = [],
+  overlay,
 }: {
   result: BacktestResult
   cursor: number
   regions?: TimeRegion[]
+  /** pills/badges floated over the plot area (hero-chart metrics) */
+  overlay?: React.ReactNode
 }) {
   const { containerRef, chart } = useChart({
     localization: { priceFormatter: (p: number) => fmtK(p) },
@@ -88,7 +91,10 @@ export function EquityChart({
           <span className="inline-block w-3 h-0.5 bg-gray-500" /> buy &amp; hold
         </span>
       </div>
-      <div ref={containerRef} className="relative h-[200px]" />
+      <div className="relative">
+        <div ref={containerRef} className="relative h-[240px] sm:h-[280px]" />
+        {overlay && <div className="absolute top-1 left-1 right-16 z-10 pointer-events-none">{overlay}</div>}
+      </div>
     </div>
   )
 }

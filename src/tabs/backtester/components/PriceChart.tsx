@@ -126,7 +126,7 @@ export function PriceChart({
 
   return (
     <div className="bg-gray-900 rounded-xl border border-gray-800 p-2">
-      <div ref={containerRef} className="relative h-[300px] sm:h-[380px]" />
+      <div ref={containerRef} className="relative h-[240px] sm:h-[300px]" />
     </div>
   )
 }
