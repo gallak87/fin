@@ -20,7 +20,7 @@ export function RobustnessLab() {
   const [tab, setTab] = useState<TabId>('sweep')
 
   return (
-    <div className="bg-gray-900 rounded-xl border border-gray-800">
+    <div id="robustness-lab" className="bg-gray-900 rounded-xl border border-gray-800 scroll-mt-16">
       <div className="px-3 pt-2.5 pb-1 flex flex-wrap items-baseline gap-x-2">
         <span className="text-xs uppercase tracking-wide text-gray-400">Robustness lab</span>
         <span className="text-[10px] text-gray-600">was that result luck?</span>

@@ -105,6 +105,14 @@ export function PlaybackBar() {
       </span>
 
       <MiniMetrics />
+
+      <button
+        className={btn}
+        title="Jump to the robustness lab — was that result luck?"
+        onClick={() => document.getElementById('robustness-lab')?.scrollIntoView({ behavior: 'smooth' })}
+      >
+        🧪 lab
+      </button>
     </div>
   )
 }
