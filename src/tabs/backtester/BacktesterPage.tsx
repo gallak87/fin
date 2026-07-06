@@ -15,7 +15,6 @@ import { drawdownFromPeak } from './engine/indicators'
 import { CustomCodePanel } from './components/CustomCodePanel'
 import { StratPills, FinalOutcome } from './components/StratPills'
 import { GauntletCard } from './components/GauntletCard'
-import { RobustnessLab } from './components/lab/RobustnessLab'
 import { CUSTOM_ID } from './engine/custom'
 
 function Skeleton() {
@@ -108,7 +107,6 @@ export default function BacktesterPage({ drawerOpen }: { drawerOpen: boolean }) 
             {result.run.strip && <IndicatorStrip result={result} cursor={cursor} />}
             <TradeLog result={result} cursor={cursor} />
             <TradeStats result={result} cursor={cursor} />
-            <RobustnessLab />
           </>
         )}
       </main>

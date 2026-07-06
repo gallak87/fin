@@ -4,6 +4,7 @@ import { resolveStrategy } from '../engine/lab'
 import { defaultParams } from '../engine/strategies'
 import { useBacktestStore } from '../store'
 import { useComputed } from './lab/labUtils'
+import { RobustnessLab } from './lab/RobustnessLab'
 
 const ICON: Record<GauntletStatus, { glyph: string; cls: string }> = {
   pass: { glyph: '✓', cls: 'text-green-400' },
@@ -33,6 +34,8 @@ export function GauntletCard() {
   const customCode = useBacktestStore((s) => s.customCode)
   const [report, setReport, reportStale] = useComputed<GauntletReport>([result])
   const [progress, setProgress] = useState<{ label: string; frac: number } | null>(null)
+  const labOpen = useBacktestStore((s) => s.labOpen)
+  const setLabOpen = useBacktestStore((s) => s.setLabOpen)
 
   if (!bars || !result) return null
 
@@ -59,7 +62,7 @@ export function GauntletCard() {
   }
 
   return (
-    <div className="bg-gray-900 rounded-xl border border-gray-800 px-3 py-2 space-y-2">
+    <div id="gauntlet" className="bg-gray-900 rounded-xl border border-gray-800 px-3 py-2 space-y-2 scroll-mt-16">
       <div className="flex flex-wrap items-center gap-3">
         <span className="text-[10px] uppercase tracking-wide text-gray-500">Was that luck?</span>
         {!progress ? (
@@ -86,10 +89,10 @@ export function GauntletCard() {
           <span className="text-[10px] text-amber-400/80">inputs changed — re-run</span>
         )}
         <button
-          onClick={() => document.getElementById('robustness-lab')?.scrollIntoView({ behavior: 'smooth' })}
-          className="ml-auto text-[10px] text-gray-500 hover:text-gray-300"
+          onClick={() => setLabOpen(!labOpen)}
+          className={`ml-auto text-[10px] ${labOpen ? 'text-blue-300' : 'text-gray-500 hover:text-gray-300'}`}
         >
-          full lab ↓
+          {labOpen ? '▾ full lab' : '▸ full lab'}
         </button>
       </div>
       {report && !progress && (
@@ -103,6 +106,7 @@ export function GauntletCard() {
           ))}
         </div>
       )}
+      {labOpen && <RobustnessLab />}
     </div>
   )
 }

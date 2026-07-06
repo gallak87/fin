@@ -67,6 +67,8 @@ interface BacktestStore {
   customError: string | null
   /** first out-of-sample bar index (walk-forward shading); null = no shading */
   oosStart: number | null
+  /** full robustness lab expanded inside the gauntlet card */
+  labOpen: boolean
 
   loadTicker: (ticker: string) => Promise<void>
   setStrategy: (id: string) => void
@@ -74,6 +76,7 @@ interface BacktestStore {
   /** apply several params at once (heatmap cell click, walk-forward apply) */
   setParams: (patch: Record<string, number>) => void
   setOosStart: (i: number | null) => void
+  setLabOpen: (open: boolean) => void
   setCapital: (capital: number) => void
   setSpeed: (speed: number) => void
   setSetting: <K extends keyof EngineSettings>(key: K, value: EngineSettings[K]) => void
@@ -136,6 +139,7 @@ export const useBacktestStore = create<BacktestStore>()(
       playing: false,
       customError: null,
       oosStart: null,
+      labOpen: false,
 
       loadTicker: async (ticker) => {
         set({ ticker, bars: null, result: null, playing: false })
@@ -170,6 +174,7 @@ export const useBacktestStore = create<BacktestStore>()(
         }),
 
       setOosStart: (oosStart) => set({ oosStart }),
+      setLabOpen: (labOpen) => set({ labOpen }),
 
       setCapital: (capital) => set((s) => ({ capital, ...rerun({ ...s, capital }) })),
       setCustomCode: (customCode) => set((s) => ({ customCode, ...rerun({ ...s, customCode }) })),

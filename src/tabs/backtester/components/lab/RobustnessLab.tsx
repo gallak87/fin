@@ -15,17 +15,16 @@ const TABS = [
 
 type TabId = (typeof TABS)[number]['id']
 
-/** Phase 3: every panel answers "was that result luck?" from a different angle. */
+/**
+ * Phase 3: every panel answers "was that result luck?" from a different
+ * angle. Lives inside the gauntlet card as its expandable deep-dive.
+ */
 export function RobustnessLab() {
   const [tab, setTab] = useState<TabId>('sweep')
 
   return (
-    <div id="robustness-lab" className="bg-gray-900 rounded-xl border border-gray-800 scroll-mt-16">
-      <div className="px-3 pt-2.5 pb-1 flex flex-wrap items-baseline gap-x-2">
-        <span className="text-xs uppercase tracking-wide text-gray-400">Robustness lab</span>
-        <span className="text-[10px] text-gray-600">was that result luck?</span>
-      </div>
-      <div className="px-3 flex flex-wrap gap-1 border-b border-gray-800 pb-2">
+    <div className="border-t border-gray-800 -mx-3 px-3 pt-2 mt-2">
+      <div className="flex flex-wrap gap-1 border-b border-gray-800 pb-2">
         {TABS.map((t) => (
           <button
             key={t.id}
@@ -41,7 +40,7 @@ export function RobustnessLab() {
           </button>
         ))}
       </div>
-      <div className="p-3">
+      <div className="py-3">
         {tab === 'sweep' && <SweepPanel />}
         {tab === 'walkforward' && <WalkForwardPanel />}
         {tab === 'montecarlo' && <MonteCarloPanel />}

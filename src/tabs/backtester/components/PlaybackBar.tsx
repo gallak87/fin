@@ -108,8 +108,11 @@ export function PlaybackBar() {
 
       <button
         className={btn}
-        title="Jump to the robustness lab — was that result luck?"
-        onClick={() => document.getElementById('robustness-lab')?.scrollIntoView({ behavior: 'smooth' })}
+        title="Open the robustness lab — was that result luck?"
+        onClick={() => {
+          useBacktestStore.getState().setLabOpen(true)
+          document.getElementById('gauntlet')?.scrollIntoView({ behavior: 'smooth' })
+        }}
       >
         🧪 lab
       </button>
