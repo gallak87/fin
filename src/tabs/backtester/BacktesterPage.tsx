@@ -95,15 +95,18 @@ export default function BacktesterPage({ drawerOpen }: { drawerOpen: boolean }) 
             <SignalStrip result={result} cursor={cursor} />
             <FinalOutcome />
             <GauntletCard />
+            {/* keyed by ticker: a switch fully remounts the charts, so no
+                incremental chart state can survive an A→B→A round-trip */}
             <EquityChart
+              key={`eq-${ticker}`}
               result={result}
               cursor={cursor}
               regions={regions}
               overlay={<MetricsPills result={result} cursor={cursor} />}
             />
-            <DrawdownChart result={result} cursor={cursor} />
-            <PriceChart result={result} cursor={cursor} regions={regions} />
-            {result.run.strip && <IndicatorStrip result={result} cursor={cursor} />}
+            <DrawdownChart key={`dd-${ticker}`} result={result} cursor={cursor} />
+            <PriceChart key={`px-${ticker}`} result={result} cursor={cursor} regions={regions} />
+            {result.run.strip && <IndicatorStrip key={`st-${ticker}`} result={result} cursor={cursor} />}
             <TradeLog result={result} cursor={cursor} />
             <TradeStats result={result} cursor={cursor} />
           </>
