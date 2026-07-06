@@ -5,6 +5,7 @@ import { useBacktestStore } from '../store'
 import { StrategyPicker } from './StrategyPicker'
 import { EngineSettingsPanel } from './EngineSettingsPanel'
 import { PresetList } from './PresetList'
+import { PeriodPanel } from './PeriodPanel'
 import { fmtMoney } from '../../../lib/format'
 
 interface ManifestEntry {
@@ -64,6 +65,10 @@ export function BacktestControls() {
             ))}
           </div>
         )}
+      </Section>
+
+      <Section title="Period">
+        <PeriodPanel />
       </Section>
 
       <Section title="Strategy">

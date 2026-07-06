@@ -37,6 +37,16 @@ function decodeBars(f: OhlcFile): Bar[] {
 
 const barsCache = new Map<string, Bar[]>()
 
+/** Window the series to [start, end] (ISO dates, inclusive); degenerate windows fall back to full. */
+function sliceBars(all: Bar[], start: string | null, end: string | null): Bar[] {
+  let si = 0
+  let ei = all.length - 1
+  if (start) while (si < all.length && all[si].t < start) si++
+  if (end) while (ei >= 0 && all[ei].t > end) ei--
+  if (ei - si + 1 < 30) return all
+  return all.slice(si, ei + 1)
+}
+
 /** Load any bundled ticker's bars (cached) — used by the lab's multi-ticker runs. */
 export async function loadBars(ticker: string): Promise<Bar[] | null> {
   const hit = barsCache.get(ticker)
@@ -59,8 +69,13 @@ interface BacktestStore {
   settings: EngineSettings
   customCode: string
   savedStrats: SavedStrat[]
+  /** backtest window (ISO dates, inclusive); null = full history */
+  rangeStart: string | null
+  rangeEnd: string | null
 
   // ephemeral
+  /** full loaded series; `bars` below is the ranged view everything runs on */
+  allBars: Bar[] | null
   bars: Bar[] | null
   result: BacktestResult | null
   cursor: number
@@ -85,6 +100,7 @@ interface BacktestStore {
   setLabData: (forResult: BacktestResult, patch: Partial<LabData>) => void
   setCapital: (capital: number) => void
   setSpeed: (speed: number) => void
+  setRange: (start: string | null, end: string | null) => void
   setSetting: <K extends keyof EngineSettings>(key: K, value: EngineSettings[K]) => void
   setCustomCode: (code: string) => void
   saveCurrentStrat: () => void
@@ -108,6 +124,8 @@ const DEFAULTS = {
   speed: 8,
   settings: DEFAULT_SETTINGS,
   customCode: DEFAULT_CUSTOM_CODE,
+  rangeStart: null as string | null,
+  rangeEnd: null as string | null,
 }
 
 /** merged current params for the active strategy (defaults filled in) */
@@ -142,6 +160,7 @@ export const useBacktestStore = create<BacktestStore>()(
     (set, get) => ({
       ...DEFAULTS,
       savedStrats: [],
+      allBars: null,
       bars: null,
       result: null,
       cursor: 0,
@@ -152,15 +171,25 @@ export const useBacktestStore = create<BacktestStore>()(
       labData: null,
 
       loadTicker: async (ticker) => {
-        set({ ticker, bars: null, result: null, playing: false })
+        set({ ticker, allBars: null, bars: null, result: null, playing: false })
         const load = OHLC_MODULES[`../../data/ohlc/${ticker}.json`]
         if (!load) return
         const mod = (await load()) as { default: OhlcFile }
         // ignore stale loads if the user switched tickers mid-flight
         if (get().ticker !== ticker) return
-        const bars = decodeBars(mod.default)
-        set((s) => ({ bars, ...rerun({ ...s, bars }) }))
+        const allBars = decodeBars(mod.default)
+        set((s) => {
+          const bars = sliceBars(allBars, s.rangeStart, s.rangeEnd)
+          return { allBars, bars, ...rerun({ ...s, bars }) }
+        })
       },
+
+      setRange: (rangeStart, rangeEnd) =>
+        set((s) => {
+          if (!s.allBars) return { rangeStart, rangeEnd }
+          const bars = sliceBars(s.allBars, rangeStart, rangeEnd)
+          return { rangeStart, rangeEnd, bars, ...rerun({ ...s, bars }) }
+        }),
 
       setStrategy: (strategyId) => set((s) => ({ strategyId, ...rerun({ ...s, strategyId }) })),
 
@@ -273,7 +302,11 @@ export const useBacktestStore = create<BacktestStore>()(
           return { cursor: Math.max(min, Math.min(i, s.bars.length - 1)) }
         }),
 
-      reset: () => set((s) => ({ ...DEFAULTS, ticker: s.ticker, ...rerun({ ...s, ...DEFAULTS, ticker: s.ticker }) })),
+      reset: () =>
+        set((s) => {
+          const bars = s.allBars ?? s.bars // range resets → back to full history
+          return { ...DEFAULTS, ticker: s.ticker, bars, ...rerun({ ...s, ...DEFAULTS, ticker: s.ticker, bars }) }
+        }),
     }),
     {
       name: 'backtester',
@@ -287,6 +320,8 @@ export const useBacktestStore = create<BacktestStore>()(
         settings: s.settings,
         customCode: s.customCode,
         savedStrats: s.savedStrats,
+        rangeStart: s.rangeStart,
+        rangeEnd: s.rangeEnd,
       }),
       merge: (persisted, current) => {
         const p = persisted as Partial<BacktestStore> | undefined
