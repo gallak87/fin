@@ -108,7 +108,7 @@ export function PlaybackBar() {
       <MiniMetrics />
 
       <button
-        className={btn}
+        className="px-2 py-1 text-xs text-gray-400 border border-gray-700 rounded hover:text-white hover:border-gray-500"
         title="Open the robustness lab — was that result luck?"
         onClick={() => {
           useBacktestStore.getState().setLabOpen(true)
