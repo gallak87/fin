@@ -35,6 +35,15 @@ export const PRESETS: Preset[] = [
     blurb: 'Basically the classic 200-day regime filter with a hair-trigger entry — equities trend at regime-scale.',
   },
   {
+    id: 'spy-mid-cross',
+    ticker: 'SPY',
+    name: 'MA 10/75',
+    strategyId: 'ma-cross',
+    params: { fast: 10, slow: 75, useEma: 0 },
+    settings: SL7,
+    blurb: 'Mid-tempo cross for the S&P — near-matches buy & hold with a far shallower worst drawdown. Insurance, cheap.',
+  },
+  {
     id: 'gld-slow-cross',
     ticker: 'GLD',
     name: 'MA 42/200',
