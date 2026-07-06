@@ -1,4 +1,5 @@
 import { STRATEGIES } from '../engine/strategies'
+import { CUSTOM_META } from '../engine/custom'
 import { useBacktestStore } from '../store'
 
 /** Plain-English strategy cards — the whole card is clickable. */
@@ -8,7 +9,7 @@ export function StrategyPicker() {
 
   return (
     <div className="space-y-1.5">
-      {STRATEGIES.map((s) => (
+      {[...STRATEGIES, CUSTOM_META].map((s) => (
         <button
           key={s.id}
           onClick={() => setStrategy(s.id)}

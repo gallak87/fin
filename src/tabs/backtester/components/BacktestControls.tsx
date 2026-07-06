@@ -1,5 +1,6 @@
 import manifest from '../../../data/ohlc/index.json'
 import { getStrategy, defaultParams } from '../engine/strategies'
+import { CUSTOM_ID } from '../engine/custom'
 import { useBacktestStore } from '../store'
 import { StrategyPicker } from './StrategyPicker'
 import { EngineSettingsPanel } from './EngineSettingsPanel'
@@ -64,7 +65,7 @@ export function BacktestControls() {
         <StrategyPicker />
       </Section>
 
-      {strategy.params.length > 0 && (
+      {strategyId !== CUSTOM_ID && strategy.params.length > 0 && (
         <Section title="Settings">
           {strategy.params.map((p) =>
             p.toggle ? (

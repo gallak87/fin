@@ -8,6 +8,8 @@ import { IndicatorStrip } from './components/IndicatorStrip'
 import { EquityChart } from './components/EquityChart'
 import { BacktestMetrics } from './components/BacktestMetrics'
 import { TradeLog } from './components/TradeLog'
+import { CustomCodePanel } from './components/CustomCodePanel'
+import { CUSTOM_ID } from './engine/custom'
 
 function Skeleton() {
   return (
@@ -24,7 +26,7 @@ function Skeleton() {
 }
 
 export default function BacktesterPage({ drawerOpen }: { drawerOpen: boolean }) {
-  const { bars, result, cursor, ticker } = useBacktestStore()
+  const { bars, result, cursor, ticker, strategyId } = useBacktestStore()
   const loadTicker = useBacktestStore((s) => s.loadTicker)
 
   // first visit (nothing persisted → onRehydrateStorage may fire before this
@@ -49,6 +51,7 @@ export default function BacktesterPage({ drawerOpen }: { drawerOpen: boolean }) 
       </aside>
 
       <main className="flex-1 overflow-y-auto p-3 space-y-3">
+        {strategyId === CUSTOM_ID && <CustomCodePanel />}
         {!bars || !result ? (
           <Skeleton />
         ) : (

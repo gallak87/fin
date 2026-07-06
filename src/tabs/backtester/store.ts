@@ -3,6 +3,7 @@ import { persist } from 'zustand/middleware'
 import type { Bar, BacktestResult, EngineSettings } from './engine/types'
 import { runBacktest, DEFAULT_SETTINGS } from './engine/engine'
 import { getStrategy, defaultParams, STRATEGIES } from './engine/strategies'
+import { CUSTOM_ID, DEFAULT_CUSTOM_CODE, compileCustomStrategy } from './engine/custom'
 
 // eager: which tickers exist; lazy: the actual bar data, one chunk per ticker
 const OHLC_MODULES = import.meta.glob(['../../data/ohlc/*.json', '!../../data/ohlc/index.json'])
@@ -30,12 +31,15 @@ interface BacktestStore {
   capital: number
   speed: number // multiplier; 1× = 4 bars/sec
   settings: EngineSettings
+  customCode: string
 
   // ephemeral
   bars: Bar[] | null
   result: BacktestResult | null
   cursor: number
   playing: boolean
+  /** compile/runtime error from the custom strategy; null when it ran clean */
+  customError: string | null
 
   loadTicker: (ticker: string) => Promise<void>
   setStrategy: (id: string) => void
@@ -43,6 +47,7 @@ interface BacktestStore {
   setCapital: (capital: number) => void
   setSpeed: (speed: number) => void
   setSetting: <K extends keyof EngineSettings>(key: K, value: EngineSettings[K]) => void
+  setCustomCode: (code: string) => void
   play: () => void
   pause: () => void
   stepFwd: (n?: number) => void
@@ -58,14 +63,20 @@ const DEFAULTS = {
   capital: 10_000,
   speed: 8,
   settings: DEFAULT_SETTINGS,
+  customCode: DEFAULT_CUSTOM_CODE,
 }
 
 function rerun(s: BacktestStore): Partial<BacktestStore> {
   if (!s.bars) return { result: null, cursor: 0, playing: false }
-  const strategy = getStrategy(s.strategyId)
-  const params = { ...defaultParams(strategy), ...(s.params[strategy.id] ?? {}) }
-  const result = runBacktest(s.bars, strategy, params, s.capital, s.settings)
-  return { result, cursor: Math.min(result.warmup, s.bars.length - 1), playing: false }
+  try {
+    const strategy = s.strategyId === CUSTOM_ID ? compileCustomStrategy(s.customCode) : getStrategy(s.strategyId)
+    const params = { ...defaultParams(strategy), ...(s.params[strategy.id] ?? {}) }
+    const result = runBacktest(s.bars, strategy, params, s.capital, s.settings)
+    return { result, cursor: Math.min(result.warmup, s.bars.length - 1), playing: false, customError: null }
+  } catch (e) {
+    // bad custom code: keep the last good result on screen, surface the error
+    return { playing: false, customError: e instanceof Error ? e.message : String(e) }
+  }
 }
 
 export const useBacktestStore = create<BacktestStore>()(
@@ -76,6 +87,7 @@ export const useBacktestStore = create<BacktestStore>()(
       result: null,
       cursor: 0,
       playing: false,
+      customError: null,
 
       loadTicker: async (ticker) => {
         set({ ticker, bars: null, result: null, playing: false })
@@ -102,6 +114,7 @@ export const useBacktestStore = create<BacktestStore>()(
         }),
 
       setCapital: (capital) => set((s) => ({ capital, ...rerun({ ...s, capital }) })),
+      setCustomCode: (customCode) => set((s) => ({ customCode, ...rerun({ ...s, customCode }) })),
       setSpeed: (speed) => set({ speed }),
 
       setSetting: (key, value) =>
@@ -149,6 +162,7 @@ export const useBacktestStore = create<BacktestStore>()(
         capital: s.capital,
         speed: s.speed,
         settings: s.settings,
+        customCode: s.customCode,
       }),
       merge: (persisted, current) => {
         const p = persisted as Partial<BacktestStore> | undefined
