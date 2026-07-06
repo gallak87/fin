@@ -1,20 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
-import type { Metrics } from '../../engine/types'
 import { runBacktest } from '../../engine/engine'
-import { gridValues, mapChunked } from '../../engine/lab'
+import { gridValues, mapChunked, type SweepGrid } from '../../engine/lab'
 import { useBacktestStore } from '../../store'
 import { AxisSelect, Histogram, MetricPicker, RunButton, StaleNote } from './labCommon'
-import { fmtMetric, heatColor, useActiveStrategy, useComputed, useParamAxes, type MetricKey } from './labUtils'
-
-interface Grid {
-  xKey: string
-  yKey: string
-  xLabel: string
-  yLabel: string
-  xs: number[]
-  ys: number[]
-  cells: (Metrics | null)[][] // [yi][xi]
-}
+import { fmtMetric, heatColor, useActiveStrategy, useLabData, useParamAxes, type MetricKey } from './labUtils'
 
 const MARGIN = { left: 44, bottom: 26, top: 4, right: 4 }
 const HEIGHT = 300
@@ -30,7 +19,7 @@ export function SweepPanel() {
 
   const { numeric, x, y, setXKey, setYKey } = useParamAxes(strategy?.params ?? [])
   const [metric, setMetric] = useState<MetricKey>('sharpe')
-  const [grid, setGrid, gridStale] = useComputed<Grid>([strategyId, bars, settings, capital])
+  const [grid, setGrid, gridStale] = useLabData('sweep')
   const [progress, setProgress] = useState<number | null>(null)
   const [tip, setTip] = useState<{ px: number; py: number; text: string } | null>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -130,7 +119,7 @@ export function SweepPanel() {
       },
       (done, total) => setProgress(done / total),
     )
-    const cells: (Metrics | null)[][] = ys.map((_, yi) => xs.map((_, xi) => flat[yi * xs.length + xi]))
+    const cells: SweepGrid['cells'] = ys.map((_, yi) => xs.map((_, xi) => flat[yi * xs.length + xi]))
     setGrid({ xKey: x.key, yKey: y.key, xLabel: x.label, yLabel: y.label, xs, ys, cells })
     setProgress(null)
   }

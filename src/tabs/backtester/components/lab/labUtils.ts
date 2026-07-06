@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import type { Metrics, ParamDef } from '../../engine/types'
-import { resolveStrategy } from '../../engine/lab'
+import { resolveStrategy, type LabData } from '../../engine/lab'
 import { useBacktestStore } from '../../store'
 import { fmtPct } from '../../../../lib/format'
 
@@ -38,6 +38,25 @@ export function useComputed<T>(deps: unknown[]): [T | null, (v: T) => void, bool
     entry != null && entry.deps.length === deps.length && entry.deps.every((d, i) => Object.is(d, deps[i]))
   // stale = we HAD results but an input changed since they were computed
   return [fresh ? entry.value : null, (value: T) => setEntry({ deps, value }), entry != null && !fresh]
+}
+
+/**
+ * One slice of the shared lab-artifact store: value is present only while it
+ * belongs to the live result (gauntlet prepopulates these; panel runs
+ * overwrite at higher resolution). Third element = stale (inputs changed).
+ */
+export function useLabData<K extends keyof LabData>(
+  key: K,
+): [LabData[K] | null, (v: NonNullable<LabData[K]>) => void, boolean] {
+  const result = useBacktestStore((s) => s.result)
+  const entry = useBacktestStore((s) => s.labData)
+  const setLabData = useBacktestStore((s) => s.setLabData)
+  const fresh = entry != null && entry.forResult === result ? (entry.data[key] ?? null) : null
+  const stale = entry != null && entry.forResult !== result && entry.data[key] != null
+  const set = (v: NonNullable<LabData[K]>) => {
+    if (result) setLabData(result, { [key]: v })
+  }
+  return [fresh, set, stale]
 }
 
 /** Sequential blue ramp on the dark surface: brighter = higher (better). */

@@ -2,22 +2,15 @@ import { useState } from 'react'
 import { mapChunked, mulberry32, quantile } from '../../engine/lab'
 import { useBacktestStore } from '../../store'
 import { Histogram, RunButton, StaleNote, Stat } from './labCommon'
-import { useComputed } from './labUtils'
+import { useLabData } from './labUtils'
 import { fmtMoney, fmtPct } from '../../../../lib/format'
-
-interface McResult {
-  ends: number[]
-  dds: number[]
-  actualEnd: number
-  pLoss: number
-}
 
 const N = 2000
 
 export function MonteCarloPanel() {
   const result = useBacktestStore((s) => s.result)
   const capital = useBacktestStore((s) => s.capital)
-  const [res, setRes, resStale] = useComputed<McResult>([result])
+  const [res, setRes, resStale] = useLabData('mc')
   const [progress, setProgress] = useState<number | null>(null)
 
   const closed = (result?.trades ?? []).filter((t) => t.pnlPct != null)

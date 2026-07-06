@@ -3,20 +3,8 @@ import { runBacktest } from '../../engine/engine'
 import { gridValues, mapChunked, metricsOnWindow } from '../../engine/lab'
 import { useBacktestStore } from '../../store'
 import { AxisSelect, RunButton, StaleNote, Stat } from './labCommon'
-import { useActiveStrategy, useComputed, useParamAxes } from './labUtils'
+import { useActiveStrategy, useLabData, useParamAxes } from './labUtils'
 import { fmtPct } from '../../../../lib/format'
-
-interface WfResult {
-  isBest: Record<string, number>
-  fullBest: Record<string, number>
-  oosStart: number
-  isSharpe: number
-  isCagr: number
-  oosSharpe: number
-  oosCagr: number
-  fullSharpe: number
-  fullOosSharpe: number
-}
 
 export function WalkForwardPanel() {
   const bars = useBacktestStore((s) => s.bars)
@@ -30,7 +18,7 @@ export function WalkForwardPanel() {
 
   const { numeric, x, y, setXKey, setYKey } = useParamAxes(strategy?.params ?? [])
   const [split, setSplit] = useState(70)
-  const [res, setRes, resStale] = useComputed<WfResult>([strategyId, bars, settings, capital, split])
+  const [res, setRes, resStale] = useLabData('wf')
   const [progress, setProgress] = useState<number | null>(null)
 
   if (!strategy || numeric.length < 2 || !x || !y) {

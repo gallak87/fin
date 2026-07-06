@@ -36,6 +36,7 @@ export function GauntletCard() {
   const [progress, setProgress] = useState<{ label: string; frac: number } | null>(null)
   const labOpen = useBacktestStore((s) => s.labOpen)
   const setLabOpen = useBacktestStore((s) => s.setLabOpen)
+  const setLabData = useBacktestStore((s) => s.setLabData)
 
   if (!bars || !result) return null
 
@@ -58,6 +59,8 @@ export function GauntletCard() {
       onProgress: (label, frac) => setProgress({ label, frac }),
     })
     setReport(rep)
+    // prepopulate the full lab's panels with everything the gauntlet computed
+    setLabData(result, rep.artifacts)
     setProgress(null)
   }
 

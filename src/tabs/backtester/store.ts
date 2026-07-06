@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import type { Bar, BacktestResult, EngineSettings } from './engine/types'
+import type { LabData } from './engine/lab'
 import { runBacktest, DEFAULT_SETTINGS } from './engine/engine'
 import { getStrategy, defaultParams, STRATEGIES } from './engine/strategies'
 import { CUSTOM_ID, DEFAULT_CUSTOM_CODE, compileCustomStrategy } from './engine/custom'
@@ -69,6 +70,8 @@ interface BacktestStore {
   oosStart: number | null
   /** full robustness lab expanded inside the gauntlet card */
   labOpen: boolean
+  /** computed lab artifacts (sweep/wf/mc/luck) tied to the result they came from */
+  labData: { forResult: BacktestResult; data: LabData } | null
 
   loadTicker: (ticker: string) => Promise<void>
   setStrategy: (id: string) => void
@@ -77,6 +80,8 @@ interface BacktestStore {
   setParams: (patch: Record<string, number>) => void
   setOosStart: (i: number | null) => void
   setLabOpen: (open: boolean) => void
+  /** merge lab artifacts; ignored when forResult no longer matches the live result */
+  setLabData: (forResult: BacktestResult, patch: Partial<LabData>) => void
   setCapital: (capital: number) => void
   setSpeed: (speed: number) => void
   setSetting: <K extends keyof EngineSettings>(key: K, value: EngineSettings[K]) => void
@@ -140,6 +145,7 @@ export const useBacktestStore = create<BacktestStore>()(
       customError: null,
       oosStart: null,
       labOpen: false,
+      labData: null,
 
       loadTicker: async (ticker) => {
         set({ ticker, bars: null, result: null, playing: false })
@@ -175,6 +181,13 @@ export const useBacktestStore = create<BacktestStore>()(
 
       setOosStart: (oosStart) => set({ oosStart }),
       setLabOpen: (labOpen) => set({ labOpen }),
+
+      setLabData: (forResult, patch) =>
+        set((s) => {
+          if (s.result !== forResult) return {} // stale async completion
+          const data = s.labData?.forResult === forResult ? s.labData.data : {}
+          return { labData: { forResult, data: { ...data, ...patch } } }
+        }),
 
       setCapital: (capital) => set((s) => ({ capital, ...rerun({ ...s, capital }) })),
       setCustomCode: (customCode) => set((s) => ({ customCode, ...rerun({ ...s, customCode }) })),

@@ -6,13 +6,13 @@ const BacktesterPage = lazy(() => import('./tabs/backtester/BacktesterPage'))
 type Tab = 'rent-vs-buy' | 'backtester'
 
 const TABS: { id: Tab; label: string }[] = [
-  { id: 'rent-vs-buy', label: 'Rent vs Buy' },
   { id: 'backtester', label: 'Backtester' },
+  { id: 'rent-vs-buy', label: 'Rent vs Buy' },
 ]
 
 function initialTab(): Tab {
   const saved = localStorage.getItem('fin-tab')
-  return saved === 'backtester' ? 'backtester' : 'rent-vs-buy'
+  return saved === 'rent-vs-buy' ? 'rent-vs-buy' : 'backtester'
 }
 
 export default function App() {

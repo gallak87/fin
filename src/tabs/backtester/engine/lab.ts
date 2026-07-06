@@ -3,6 +3,46 @@ import { computeMetrics, tradingDaysPerYear } from './engine'
 import { getStrategy } from './strategies'
 import { CUSTOM_ID, compileCustomStrategy } from './custom'
 
+/** 2-param sweep output — one full Metrics per cell, [yi][xi]. */
+export interface SweepGrid {
+  xKey: string
+  yKey: string
+  xLabel: string
+  yLabel: string
+  xs: number[]
+  ys: number[]
+  cells: (Metrics | null)[][]
+}
+
+export interface WfResult {
+  isBest: Record<string, number>
+  fullBest: Record<string, number>
+  oosStart: number
+  isSharpe: number
+  isCagr: number
+  oosSharpe: number
+  oosCagr: number
+  fullSharpe: number
+  fullOosSharpe: number
+}
+
+export interface McResult {
+  ends: number[]
+  dds: number[]
+  actualEnd: number
+  pLoss: number
+}
+
+export type LuckValues = { cagr: number[]; sharpe: number[]; maxDrawdown: number[] }
+
+/** Everything the lab (or the gauntlet) has computed for one backtest result. */
+export interface LabData {
+  sweep?: SweepGrid
+  wf?: WfResult
+  mc?: McResult
+  luck?: LuckValues
+}
+
 /** Resolve the active strategy, compiling custom code when needed. Throws on bad code. */
 export function resolveStrategy(id: string, customCode: string): Strategy {
   return id === CUSTOM_ID ? compileCustomStrategy(customCode) : getStrategy(id)

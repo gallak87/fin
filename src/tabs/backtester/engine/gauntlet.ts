@@ -9,6 +9,7 @@ import {
   quantile,
   shuffleRuns,
   signalStrategy,
+  type LabData,
 } from './lab'
 
 export type GauntletStatus = 'pass' | 'warn' | 'fail' | 'skip'
@@ -22,6 +23,8 @@ export interface GauntletCheck {
 export interface GauntletReport {
   checks: GauntletCheck[]
   overall: GauntletStatus
+  /** everything computed along the way, in lab-panel format — prepopulates the full lab */
+  artifacts: LabData
 }
 
 interface Opts {
@@ -42,6 +45,7 @@ interface Opts {
 export async function runGauntlet(opts: Opts): Promise<GauntletReport> {
   const { bars, strategy, params, capital, settings, result, onProgress } = opts
   const checks: GauntletCheck[] = []
+  const artifacts: LabData = {}
 
   // ---- 1. vs random (exposure-matched shuffled timing) --------------------
   onProgress?.('vs random timing', 0)
@@ -59,11 +63,16 @@ export async function runGauntlet(opts: Opts): Promise<GauntletReport> {
       Array.from({ length: 300 }, (_, i) => i),
       () => {
         const sig = shuffleRuns(result.position, result.warmup, rand)
-        return runBacktest(bars, signalStrategy(sig, result.warmup), {}, capital, nullSettings).metrics.cagr
+        return runBacktest(bars, signalStrategy(sig, result.warmup), {}, capital, nullSettings).metrics
       },
       (d, t) => onProgress?.('vs random timing', (d / t) * 0.2),
     )
-    const pct = percentileRank(sims, result.metrics.cagr)
+    artifacts.luck = {
+      cagr: sims.map((m) => m.cagr),
+      sharpe: sims.map((m) => m.sharpe),
+      maxDrawdown: sims.map((m) => m.maxDrawdown),
+    }
+    const pct = percentileRank(artifacts.luck.cagr, result.metrics.cagr)
     checks.push({
       name: 'Vs. random',
       status: pct >= 0.95 ? 'pass' : pct >= 0.6 ? 'warn' : 'fail',
@@ -87,18 +96,28 @@ export async function runGauntlet(opts: Opts): Promise<GauntletReport> {
     const ys = gridValues(py, 12)
     const combos: { xi: number; yi: number }[] = []
     ys.forEach((_, yi) => xs.forEach((_, xi) => combos.push({ xi, yi })))
-    const sharpes = await mapChunked(
+    const flat = await mapChunked(
       combos,
       ({ xi, yi }) => {
         try {
           return runBacktest(bars, strategy, { ...params, [px.key]: xs[xi], [py.key]: ys[yi] }, capital, settings)
-            .metrics.sharpe
+            .metrics
         } catch {
-          return NaN
+          return null
         }
       },
       (d, t) => onProgress?.('parameter plateau', 0.2 + (d / t) * 0.3),
     )
+    artifacts.sweep = {
+      xKey: px.key,
+      yKey: py.key,
+      xLabel: px.label,
+      yLabel: py.label,
+      xs,
+      ys,
+      cells: ys.map((_, yi) => xs.map((_, xi) => flat[yi * xs.length + xi])),
+    }
+    const sharpes = flat.map((m) => (m ? m.sharpe : NaN))
     const nearest = (vals: number[], v: number) =>
       vals.reduce((best, x, i) => (Math.abs(x - v) < Math.abs(vals[best] - v) ? i : best), 0)
     const cxi = nearest(xs, params[px.key])
@@ -158,10 +177,31 @@ export async function runGauntlet(opts: Opts): Promise<GauntletReport> {
       },
       (d, t) => onProgress?.('walk-forward', 0.5 + (d / t) * 0.35),
     )
+    const fullScores = combos.map((p) => {
+      try {
+        return runBacktest(bars, strategy, p, capital, settings).metrics.sharpe
+      } catch {
+        return -Infinity
+      }
+    })
     const isBest = combos[isScores.indexOf(Math.max(...isScores))]
+    const fullBest = combos[fullScores.indexOf(Math.max(...fullScores))]
     const honest = runBacktest(bars, strategy, isBest, capital, settings)
     const isM = metricsOnWindow(honest.equity, bars, honest.trades, honest.warmup, oosStart - 1, honest.contributed)
     const oosM = metricsOnWindow(honest.equity, bars, honest.trades, oosStart, bars.length - 1, honest.contributed)
+    const cheat = runBacktest(bars, strategy, fullBest, capital, settings)
+    const cheatOosM = metricsOnWindow(cheat.equity, bars, cheat.trades, oosStart, bars.length - 1, cheat.contributed)
+    artifacts.wf = {
+      isBest,
+      fullBest,
+      oosStart,
+      isSharpe: isM.sharpe,
+      isCagr: isM.cagr,
+      oosSharpe: oosM.sharpe,
+      oosCagr: oosM.cagr,
+      fullSharpe: Math.max(...fullScores),
+      fullOosSharpe: cheatOosM.sharpe,
+    }
     const retention = isM.sharpe > 0 ? oosM.sharpe / isM.sharpe : 0
     checks.push({
       name: 'Walk-forward',
@@ -202,6 +242,7 @@ export async function runGauntlet(opts: Opts): Promise<GauntletReport> {
     const ends = sims.map((s) => s.end).sort((a, b) => a - b)
     const dds = sims.map((s) => s.dd).sort((a, b) => a - b)
     const pLoss = ends.filter((e) => e < capital).length / ends.length
+    artifacts.mc = { ends, dds, actualEnd: result.equity[result.equity.length - 1], pLoss }
     const worst5 = quantile(dds, 0.05)
     checks.push({
       name: 'Monte Carlo',
@@ -217,5 +258,5 @@ export async function runGauntlet(opts: Opts): Promise<GauntletReport> {
       : checks.every((c) => c.status === 'skip')
         ? 'skip'
         : 'pass'
-  return { checks, overall }
+  return { checks, overall, artifacts }
 }
