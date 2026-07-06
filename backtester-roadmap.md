@@ -32,7 +32,9 @@ This is what separates a toy from a tool — every feature here answers "was tha
 - **Richer analytics**: drawdown chart under the equity curve, per-trade MAE/MFE, holding-period and PnL histograms, exposure % (time in market).
 - **Regime shading**: bear-market bands on the price chart so you can see *where* the strategy earns its keep.
 
-## Polish backlog (from the post-Phase-3 layout review)
+## Polish backlog (from the post-Phase-3 layout review) (done)
+
+Also shipped alongside: saved-strategy pills (auto-labeled snapshots in localStorage, click to apply across tickers) and an end-of-tape outcome row (start → end equity vs B&H, no fast-forwarding).
 
 - **Time-axis mismatch**: price chart follows the cursor (trailing ~200 bars) while equity/drawdown pin to full history — three stacked charts, two time windows, no cue. Add a "you are here" cursor line on the full-range charts, or a shared-timeline toggle.
 - **Pin headline metrics**: CAGR / Sharpe / max DD vs B&H belong in the sticky playback bar — the tweak-slider → check-verdict loop currently costs a scroll round-trip.
