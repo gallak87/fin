@@ -1,5 +1,7 @@
-import { useEffect } from 'react'
+import { useEffect, useMemo } from 'react'
 import { useBacktestStore } from '../store'
+import { computeMetrics, tradingDaysPerYear } from '../engine/engine'
+import { fmtPct } from '../../../lib/format'
 
 const SPEEDS = [1, 2, 4, 8, 16, 32, 64]
 const BASE_BPS = 4 // bars per second at 1×
@@ -17,6 +19,30 @@ function usePlayback() {
     const id = setInterval(() => stepFwd(barsPerTick), intervalMs)
     return () => clearInterval(id)
   }, [playing, speed, stepFwd])
+}
+
+/** Headline verdict pinned into the sticky bar: CAGR / Sharpe / max DD, colored vs B&H. */
+function MiniMetrics() {
+  const result = useBacktestStore((s) => s.result)
+  const cursor = useBacktestStore((s) => s.cursor)
+  const { m, b } = useMemo(() => {
+    if (!result) return { m: null, b: null }
+    const ppy = tradingDaysPerYear(result.bars)
+    return {
+      m: computeMetrics(result.equity, result.bars, result.trades, ppy, cursor, result.contributed),
+      b: computeMetrics(result.benchmark, result.bars, [], ppy, cursor),
+    }
+  }, [result, cursor])
+  if (!m || !b) return null
+  const tone = (a: number, bench: number, higherBetter = true) =>
+    a === bench ? 'text-gray-300' : (a > bench) === higherBetter ? 'text-green-400' : 'text-red-400'
+  return (
+    <span className="hidden sm:flex items-center gap-2.5 font-mono text-xs tabular-nums" title="vs buy & hold — green beats it, red doesn't">
+      <span className={tone(m.cagr, b.cagr)}>CAGR {fmtPct(m.cagr)}</span>
+      <span className={tone(m.sharpe, b.sharpe)}>Sh {m.sharpe.toFixed(2)}</span>
+      <span className={tone(m.maxDrawdown, b.maxDrawdown)}>DD {fmtPct(m.maxDrawdown, 0)}</span>
+    </span>
+  )
 }
 
 export function PlaybackBar() {
@@ -77,6 +103,8 @@ export function PlaybackBar() {
       <span className="font-mono text-xs text-gray-400 tabular-nums">
         {date} · {(cursor + 1).toLocaleString()}/{bars.length.toLocaleString()}
       </span>
+
+      <MiniMetrics />
     </div>
   )
 }

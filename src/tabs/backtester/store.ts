@@ -4,6 +4,16 @@ import type { Bar, BacktestResult, EngineSettings } from './engine/types'
 import { runBacktest, DEFAULT_SETTINGS } from './engine/engine'
 import { getStrategy, defaultParams, STRATEGIES } from './engine/strategies'
 import { CUSTOM_ID, DEFAULT_CUSTOM_CODE, compileCustomStrategy } from './engine/custom'
+import { autoLabel } from './engine/label'
+
+export interface SavedStrat {
+  id: string
+  label: string
+  strategyId: string
+  params: Record<string, number>
+  settings: EngineSettings
+  customCode?: string
+}
 
 // eager: which tickers exist; lazy: the actual bar data, one chunk per ticker
 const OHLC_MODULES = import.meta.glob(['../../data/ohlc/*.json', '!../../data/ohlc/index.json'])
@@ -46,6 +56,7 @@ interface BacktestStore {
   speed: number // multiplier; 1× = 4 bars/sec
   settings: EngineSettings
   customCode: string
+  savedStrats: SavedStrat[]
 
   // ephemeral
   bars: Bar[] | null
@@ -67,6 +78,9 @@ interface BacktestStore {
   setSpeed: (speed: number) => void
   setSetting: <K extends keyof EngineSettings>(key: K, value: EngineSettings[K]) => void
   setCustomCode: (code: string) => void
+  saveCurrentStrat: () => void
+  applyStrat: (id: string) => void
+  deleteStrat: (id: string) => void
   play: () => void
   pause: () => void
   stepFwd: (n?: number) => void
@@ -83,6 +97,13 @@ const DEFAULTS = {
   speed: 8,
   settings: DEFAULT_SETTINGS,
   customCode: DEFAULT_CUSTOM_CODE,
+}
+
+/** merged current params for the active strategy (defaults filled in) */
+function currentParams(s: BacktestStore): Record<string, number> {
+  if (s.strategyId === CUSTOM_ID) return {}
+  const strategy = getStrategy(s.strategyId)
+  return { ...defaultParams(strategy), ...(s.params[s.strategyId] ?? {}) }
 }
 
 function rerun(s: BacktestStore): Partial<BacktestStore> {
@@ -108,6 +129,7 @@ export const useBacktestStore = create<BacktestStore>()(
   persist(
     (set, get) => ({
       ...DEFAULTS,
+      savedStrats: [],
       bars: null,
       result: null,
       cursor: 0,
@@ -151,6 +173,40 @@ export const useBacktestStore = create<BacktestStore>()(
 
       setCapital: (capital) => set((s) => ({ capital, ...rerun({ ...s, capital }) })),
       setCustomCode: (customCode) => set((s) => ({ customCode, ...rerun({ ...s, customCode }) })),
+
+      saveCurrentStrat: () =>
+        set((s) => {
+          const params = currentParams(s)
+          let label = autoLabel(s.strategyId, params, s.settings)
+          let n = 2
+          while (s.savedStrats.some((x) => x.label === label)) {
+            label = `${autoLabel(s.strategyId, params, s.settings)} (${n++})`
+          }
+          const strat: SavedStrat = {
+            id: `${Date.now()}`,
+            label,
+            strategyId: s.strategyId,
+            params,
+            settings: { ...s.settings },
+            ...(s.strategyId === CUSTOM_ID ? { customCode: s.customCode } : {}),
+          }
+          return { savedStrats: [...s.savedStrats, strat] }
+        }),
+
+      applyStrat: (id) =>
+        set((s) => {
+          const strat = s.savedStrats.find((x) => x.id === id)
+          if (!strat) return {}
+          const next = {
+            strategyId: strat.strategyId,
+            params: { ...s.params, [strat.strategyId]: { ...strat.params } },
+            settings: { ...strat.settings },
+            customCode: strat.customCode ?? s.customCode,
+          }
+          return { ...next, ...rerun({ ...s, ...next }) }
+        }),
+
+      deleteStrat: (id) => set((s) => ({ savedStrats: s.savedStrats.filter((x) => x.id !== id) })),
       setSpeed: (speed) => set({ speed }),
 
       setSetting: (key, value) =>
@@ -199,6 +255,7 @@ export const useBacktestStore = create<BacktestStore>()(
         speed: s.speed,
         settings: s.settings,
         customCode: s.customCode,
+        savedStrats: s.savedStrats,
       }),
       merge: (persisted, current) => {
         const p = persisted as Partial<BacktestStore> | undefined

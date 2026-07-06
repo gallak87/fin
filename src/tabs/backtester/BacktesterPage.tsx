@@ -13,6 +13,7 @@ import { TradeLog } from './components/TradeLog'
 import { TradeStats } from './components/TradeStats'
 import { drawdownFromPeak } from './engine/indicators'
 import { CustomCodePanel } from './components/CustomCodePanel'
+import { StratPills } from './components/StratPills'
 import { RobustnessLab } from './components/lab/RobustnessLab'
 import { CUSTOM_ID } from './engine/custom'
 
@@ -92,6 +93,7 @@ export default function BacktesterPage({ drawerOpen }: { drawerOpen: boolean }) 
           <>
             <PlaybackBar />
             <SignalStrip result={result} cursor={cursor} />
+            <StratPills />
             <PriceChart result={result} cursor={cursor} regions={regions} />
             {result.run.strip && <IndicatorStrip result={result} cursor={cursor} />}
             <EquityChart result={result} cursor={cursor} regions={regions} />
