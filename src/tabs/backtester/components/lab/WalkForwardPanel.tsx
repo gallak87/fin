@@ -151,7 +151,7 @@ export function WalkForwardPanel() {
               setParams(res.isBest)
               setOosStart(res.oosStart)
             }}
-            className="text-xs rounded px-3 py-1.5 font-medium bg-pink-600/80 hover:bg-pink-500/80 text-white"
+            className="text-xs rounded px-3 py-1.5 font-medium bg-blue-600 hover:bg-blue-500 text-white"
           >
             Apply honest params + shade out-of-sample in replay
           </button>

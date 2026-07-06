@@ -57,7 +57,7 @@ export default function BacktesterPage({ drawerOpen }: { drawerOpen: boolean }) 
       oosStart != null && bars
         ? [
             ...bearRegions,
-            { from: oosStart, to: bars.length - 1, color: 'rgba(244,114,182,0.07)', label: 'out-of-sample' },
+            { from: oosStart, to: bars.length - 1, color: 'rgba(59,130,246,0.10)', label: 'out-of-sample' },
           ]
         : bearRegions,
     [oosStart, bars, bearRegions],

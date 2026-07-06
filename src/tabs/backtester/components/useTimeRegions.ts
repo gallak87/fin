@@ -43,7 +43,7 @@ export function useTimeRegions(
           const tag = document.createElement('div')
           tag.textContent = r.label
           tag.style.cssText =
-            'position:absolute;top:2px;left:4px;font-size:9px;text-transform:uppercase;letter-spacing:0.05em;color:rgba(244,114,182,0.7);white-space:nowrap'
+            'position:absolute;top:2px;left:4px;font-size:9px;text-transform:uppercase;letter-spacing:0.05em;color:rgba(96,165,250,0.9);white-space:nowrap'
           div.appendChild(tag)
         }
         layer.appendChild(div)
