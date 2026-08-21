@@ -23,11 +23,11 @@ interface Props {
   space: bigint
   pinned: number
   checked: number
-  elapsedMs: number
+  /** seeds per second, from whichever engine is driving */
+  rate: number
 }
 
-export function OddsStrip({ space, pinned, checked, elapsedMs }: Props) {
-  const rate = elapsedMs > 0 ? checked / (elapsedMs / 1000) : 0
+export function OddsStrip({ space, pinned, checked, rate }: Props) {
   const exhaust = rate > 0 ? Number(space) / rate : Infinity
   const odds = checked > 0 ? Number(space) / checked : Number(space)
 

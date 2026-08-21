@@ -10,7 +10,9 @@
     "test": "vitest run",
     "preview": "vite preview",
     "data:pull": "node scripts/pull-zillow.mjs",
-    "data:ohlc": "node scripts/pull-ohlc.mjs"
+    "data:ohlc": "node scripts/pull-ohlc.mjs",
+    "keys:sample": "node scripts/keys-sample.mjs",
+    "keys:filter": "node --experimental-strip-types scripts/keys-filter.mjs"
   },
   "dependencies": {
     "@noble/hashes": "^2.3.0",

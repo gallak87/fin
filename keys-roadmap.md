@@ -4,13 +4,24 @@ How to make the spinner fast, and what "fast" is actually worth.
 
 ## Where it stands
 
-The page spins in the browser on the main thread and checks every seed against a
-live API. One spin ≈ 15ms of derivation (3 address types) plus a ~350ms debounced
-network round trip, self-throttled to roughly one seed every 2 seconds. That is
-fine for the toy and hopeless for a search.
+Two engines, picked with the Chain / Ludicrous toggle.
+
+**Chain mode** spins on the main thread and checks every seed against a live API:
+~15ms of derivation plus a debounced round trip, self-throttled to roughly one
+seed every 2 seconds. Slow, but it sees the whole chain.
+
+**Ludicrous mode** (option A below, shipped) runs a worker per core against a
+local Bloom filter, no network in the loop. Measured **72 seeds/sec per core** —
+~720/sec on 10 cores, about **1,400× chain mode**. Faster and blinder: it only
+sees what the loaded filter holds.
 
 - `lib/seed.ts` — BIP39 ↔ addresses, the pin/roll solver, search-space math
 - `lib/balance.ts` — bulk balance lookups (blockchain.info, mempool.space fallback)
+- `lib/bloom.ts` — filter, sized the same for 2.6k entries or 50M
+- `lib/engine.worker.ts` + `lib/useEngine.ts` — the pool
+- `scripts/keys-sample.mjs` — starter set, every address verified funded
+- `scripts/keys-filter.mjs` — dump → `.bloom`, imports the app's own bloom.ts so
+  the build hash can't drift from the read hash
 - 6 addresses checked per seed: BIP44/49/84 × receive/change, index 0
 
 ## The constraint
@@ -18,13 +29,18 @@ fine for the toy and hopeless for a search.
 A browser page cannot spawn a process. Something has to be listening, so there
 are only three shapes this can take.
 
-### A. Browser worker pool
+### A. Browser worker pool — shipped
 
 `navigator.hardwareConcurrency` Web Workers derive in parallel; hits are tested
-against a Bloom filter of funded addresses cached in OPFS. No server, no
-dev-mode dependency, works on the deployed Pages site.
+against a Bloom filter of funded addresses. No server, no dev-mode dependency,
+works on the deployed Pages site.
 
-### B. Vite plugin → Node child process
+Ships with a starter filter of ~2.6k addresses sampled from recent blocks, each
+one confirmed funded by a balance lookup at build time. A filter match is only a
+maybe — the bloom can false-positive and a sampled address can be spent later —
+so every candidate is verified against the chain before the hit banner fires.
+
+### B. Vite plugin → Node child process — open
 
 ~40 lines in `vite.config.ts`:
 
@@ -121,14 +137,24 @@ At 10⁹/sec — a warehouse of GPUs — that's 3.7×10⁶⁰ years, about 2.7×
 the age of the universe. Six orders of magnitude of engineering buys nothing,
 because you are fighting an exponent with a coefficient.
 
-## Recommendation
+## Next
 
-Build **A** first. It gets the real speedup (no network, all cores), it works on
-the deployed site, and it doesn't couple the feature to the dev server. **B**
-becomes a thin add-on later for overnight runs against the full 50M filter, with
+**B** is still worth having for overnight runs that survive a closed tab, with
 an engine dropdown that auto-detects whether the local one is reachable.
 
+Ahead of it, though: **exhaustive recovery mode.** Random rolling is decoration.
+Enumerating every checksum-valid completion of the unpinned slots, split across
+workers by stride and resumable, is the mode that matches the table above — and
+the one that ever finds anything.
+
 ## Smaller gaps in the page today
+
+- **The starter filter is a sample, not the chain.** ~2.6k of ~50M funded
+  addresses, so Ludicrous mode is ~1,400× faster and roughly 19,000× blinder
+  than chain mode. Honest framing is in the panel; the fix is running
+  `npm run keys:filter` against a real dump and loading the result.
+- The loaded filter lives in memory only — reloading the page drops it. OPFS
+  caching is the obvious follow-up.
 
 - **Auto-spin can roll past a live wallet.** It only checks index 0 of the six
   standard spots; funds at receive index 4 are invisible to it. Escalate to the

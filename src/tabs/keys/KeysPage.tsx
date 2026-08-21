@@ -5,6 +5,10 @@ import { SeedResult } from './components/SeedResult'
 import { OddsStrip } from './components/OddsStrip'
 import { SpinFeed } from './components/SpinFeed'
 import type { SpinRow } from './components/SpinFeed'
+import { LudicrousPanel } from './components/LudicrousPanel'
+import { MAX_THREADS, useEngine } from './lib/useEngine'
+import { loadFilterFile, loadStarterFilter } from './lib/funded'
+import type { FilterInfo } from './lib/funded'
 import { fetchStats, totals, ZERO } from './lib/balance'
 import type { AddrStat } from './lib/balance'
 import {
@@ -22,6 +26,8 @@ const STORE_KEY = 'fin-keys'
 const SPIN_MS = 1800
 const DEEP_DEPTH = 10
 const WALL_LIMIT = 300
+
+type Mode = 'chain' | 'ludicrous'
 
 interface Lookup {
   key: string
@@ -67,6 +73,10 @@ export default function KeysPage() {
   const [hit, setHit] = useState<SpinRow | null>(null)
   const [elapsed, setElapsed] = useState(0)
   const [retry, setRetry] = useState(0)
+  const [mode, setMode] = useState<Mode>('chain')
+  const [filter, setFilter] = useState<FilterInfo | null>(null)
+  const [threads, setThreads] = useState(MAX_THREADS)
+  const [engineError, setEngineError] = useState<string | null>(null)
 
   const startedAt = useRef<number | null>(null)
   const lastRowKey = useRef<string | null>(null)
@@ -153,6 +163,42 @@ export default function KeysPage() {
     }
   }, [addresses, phrase, lookupKey])
 
+  // a filter hit is only a maybe — the bloom can false-positive and the set can
+  // hold spent addresses, so confirm against the chain before celebrating
+  const onCandidate = useCallback(async (words: string[], address: string) => {
+    try {
+      const map = await fetchStats([address])
+      const stat = map.get(address)
+      if (stat && stat.balance > 0) {
+        setHit({ key: words.join(' '), words, address, balance: stat.balance, txs: stat.txs })
+      }
+    } catch {
+      // best effort: a failed verification shouldn't stop the engine
+    }
+  }, [])
+
+  const engine = useEngine(onCandidate)
+  const engineStop = engine.stop
+
+  useEffect(() => {
+    if (mode !== 'ludicrous' || filter) return
+    let cancelled = false
+    loadStarterFilter()
+      .then((info) => {
+        if (!cancelled) setFilter(info)
+      })
+      .catch((err: unknown) => {
+        if (!cancelled) setEngineError(err instanceof Error ? err.message : 'filter failed to load')
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [mode, filter])
+
+  useEffect(() => {
+    if (hit) engineStop()
+  }, [hit, engineStop])
+
   const doSpin = useCallback(() => {
     setDepth(1)
     setState((s) => {
@@ -227,6 +273,34 @@ export default function KeysPage() {
     })
   }, [setSlots])
 
+  const startEngine = useCallback(() => {
+    if (!filter) return
+    setEngineError(null)
+    engine.start(
+      slots.map((s) => (s.pinned && s.word ? s.word : null)),
+      filter.filter,
+      threads,
+    )
+  }, [engine, filter, slots, threads])
+
+  const pickFilterFile = useCallback(async (file: File) => {
+    try {
+      setFilter(loadFilterFile(await file.arrayBuffer(), file.name))
+      setEngineError(null)
+    } catch (err) {
+      setEngineError(err instanceof Error ? err.message : 'could not read that filter')
+    }
+  }, [])
+
+  const switchMode = useCallback(
+    (next: Mode) => {
+      setAuto(false)
+      engineStop()
+      setMode(next)
+    },
+    [engineStop],
+  )
+
   const allPinned = pinnedCount === count
   const badWord = words.some((w) => w !== '' && !isWord(w))
 
@@ -240,11 +314,37 @@ export default function KeysPage() {
 
   return (
     <main className="mx-auto max-w-4xl space-y-3 p-4">
-      <header className="pt-2 pb-1">
-        <h1 className="text-xl font-semibold tracking-tight">Seed Roulette</h1>
-        <p className="mt-0.5 text-[13px] text-gray-500">
-          Pin the words you know. Roll the rest. Every spin gets checked against the chain.
-        </p>
+      <header className="flex flex-wrap items-start justify-between gap-3 pt-2 pb-1">
+        <div>
+          <h1 className="text-xl font-semibold tracking-tight">Seed Roulette</h1>
+          <p className="mt-0.5 text-[13px] text-gray-500">
+            {mode === 'chain'
+              ? 'Pin the words you know. Roll the rest. Every spin gets checked against the chain.'
+              : 'Every core you own, rolling seeds against a local filter. No network in the loop.'}
+          </p>
+        </div>
+        <div className="flex overflow-hidden rounded-lg border border-gray-800">
+          {(
+            [
+              ['chain', 'Chain'],
+              ['ludicrous', 'Ludicrous'],
+            ] as const
+          ).map(([id, label]) => (
+            <button
+              key={id}
+              onClick={() => switchMode(id)}
+              className={`px-3 py-1.5 text-[11px] tracking-wide uppercase transition-colors ${
+                mode === id
+                  ? id === 'ludicrous'
+                    ? 'bg-gradient-to-r from-amber-400 to-orange-500 font-bold text-gray-950'
+                    : 'bg-gray-800 text-white'
+                  : 'text-gray-500 hover:text-gray-300'
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
       </header>
 
       {hit && (
@@ -308,7 +408,7 @@ export default function KeysPage() {
           </div>
         </div>
 
-        <SeedGrid slots={slots} spinning={auto} onSet={setSlot} onTogglePin={togglePin} onPasteMany={pasteMany} />
+        <SeedGrid slots={slots} spinning={auto || engine.state.running} onSet={setSlot} onTogglePin={togglePin} onPasteMany={pasteMany} />
 
         <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
           <span className="text-[11px] text-gray-600">
@@ -318,7 +418,7 @@ export default function KeysPage() {
                 ? 'all 24 pinned — unpin a word to roll'
                 : `${pinnedCount} pinned · ${count - pinnedCount} rolling`}
           </span>
-          <div className="flex items-center gap-2">
+          <div className={`flex items-center gap-2 ${mode === 'chain' ? '' : 'hidden'}`}>
             <button
               onClick={doSpin}
               disabled={allPinned || auto}
@@ -344,9 +444,35 @@ export default function KeysPage() {
         </div>
       </section>
 
-      <OddsStrip space={space} pinned={pinnedCount} checked={checked} elapsedMs={elapsed} />
+      <OddsStrip
+        space={space}
+        pinned={pinnedCount}
+        checked={mode === 'chain' ? checked : engine.state.checked}
+        rate={
+          mode === 'chain'
+            ? elapsed > 0
+              ? checked / (elapsed / 1000)
+              : 0
+            : engine.state.rate
+        }
+      />
 
-      {valid && (
+      {mode === 'ludicrous' && (
+        <LudicrousPanel
+          state={engine.state}
+          info={filter}
+          threads={threads}
+          maxThreads={MAX_THREADS}
+          disabled={allPinned || !filter}
+          error={engineError}
+          onThreads={setThreads}
+          onStart={startEngine}
+          onStop={engineStop}
+          onLoadFilter={pickFilterFile}
+        />
+      )}
+
+      {mode === 'chain' && valid && (
         <SeedResult
           phrase={words}
           addresses={addresses}
@@ -359,7 +485,7 @@ export default function KeysPage() {
         />
       )}
 
-      <SpinFeed rows={rows} total={checked} onPick={loadPhrase} />
+      {mode === 'chain' && <SpinFeed rows={rows} total={checked} onPick={loadPhrase} />}
 
       <p className="pb-6 text-center text-[11px] text-gray-700">
         Keys never leave your browser. Balances come from blockchain.info · mempool.space.

@@ -47,7 +47,7 @@ export function WordSlot({ n, slot, spinning, inputRef, onSet, onTogglePin, onAd
     <div className="relative" ref={boxRef}>
       <div
         className={`flex items-center gap-2 rounded-lg border px-2 py-1.5 transition-colors ${state} ${
-          spinning && !slot.pinned ? 'opacity-60' : ''
+          spinning && !slot.pinned ? 'animate-pulse opacity-60' : ''
         } focus-within:border-blue-500/70`}
       >
         <span className="w-5 shrink-0 text-right font-mono text-[10px] tabular-nums text-gray-600">{n}</span>
