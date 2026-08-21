@@ -2,17 +2,19 @@ import { lazy, Suspense, useState } from 'react'
 import RentVsBuyPage from './tabs/rent-vs-buy/RentVsBuyPage'
 
 const BacktesterPage = lazy(() => import('./tabs/backtester/BacktesterPage'))
+const KeysPage = lazy(() => import('./tabs/keys/KeysPage'))
 
-type Tab = 'rent-vs-buy' | 'backtester'
+type Tab = 'rent-vs-buy' | 'backtester' | 'keys'
 
 const TABS: { id: Tab; label: string }[] = [
   { id: 'backtester', label: 'Backtester' },
   { id: 'rent-vs-buy', label: 'Rent vs Buy' },
+  { id: 'keys', label: 'Seed Roulette' },
 ]
 
 function initialTab(): Tab {
   const saved = localStorage.getItem('fin-tab')
-  return saved === 'rent-vs-buy' ? 'rent-vs-buy' : 'backtester'
+  return saved === 'rent-vs-buy' || saved === 'keys' ? saved : 'backtester'
 }
 
 export default function App() {
@@ -45,19 +47,21 @@ export default function App() {
             ))}
           </nav>
         </div>
-        <button
-          className="md:hidden text-xs text-gray-400 border border-gray-700 px-2 py-1 rounded"
-          onClick={() => setDrawerOpen((o) => !o)}
-        >
-          {drawerOpen ? 'Close inputs' : 'Edit inputs'}
-        </button>
+        {tab !== 'keys' && (
+          <button
+            className="md:hidden text-xs text-gray-400 border border-gray-700 px-2 py-1 rounded"
+            onClick={() => setDrawerOpen((o) => !o)}
+          >
+            {drawerOpen ? 'Close inputs' : 'Edit inputs'}
+          </button>
+        )}
       </header>
 
       {tab === 'rent-vs-buy' ? (
         <RentVsBuyPage drawerOpen={drawerOpen} />
       ) : (
         <Suspense fallback={<div className="p-6 text-gray-500 text-sm">Loading…</div>}>
-          <BacktesterPage drawerOpen={drawerOpen} />
+          {tab === 'keys' ? <KeysPage /> : <BacktesterPage drawerOpen={drawerOpen} />}
         </Suspense>
       )}
     </div>
