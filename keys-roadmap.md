@@ -38,7 +38,13 @@ works on the deployed Pages site.
 Ships with a starter filter of ~2.6k addresses sampled from recent blocks, each
 one confirmed funded by a balance lookup at build time. A filter match is only a
 maybe — the bloom can false-positive and a sampled address can be spent later —
-so every candidate is verified against the chain before the hit banner fires.
+so every candidate is verified against the chain, with retries, before the hit
+banner fires. The panel shows each maybe's outcome (cleared / still checking /
+couldn't check) rather than leaving a bare count that reads like a discovery.
+
+Confirmed hits are written to localStorage the moment they resolve, and a
+lifetime seed counter persists across sessions. The seeds themselves are never
+stored — see below.
 
 ### B. Vite plugin → Node child process — open
 
@@ -81,6 +87,22 @@ Measured, single core: **~68 seeds/sec** deriving all three address types
 SHA-512 rounds dominate — the secp256k1 work is the smaller half. So budget
 **500–900 seeds/sec on 8 cores**, and note that restricting to `bc1` nearly
 doubles throughput if you're rolling at random rather than recovering.
+
+## Why checked seeds are never stored
+
+Deduping what you have already rolled sounds obvious and is worthless three
+times over.
+
+1. **It can never fire.** Birthday bound on 2²⁵⁶ says you need ~4×10³⁸ draws
+   before a repeat is even likely — at 700/sec that is 10²⁸ years, about 10¹⁸
+   times the age of the universe. The lookup would return "no" every time, for
+   the entire lifetime of the hardware.
+2. **It does not fit.** 32 bytes per seed at 700/sec is 83MB/hour; localStorage
+   caps around 5MB, so it fills in under four minutes. A bloom of checked seeds
+   stretches that to ~24 minutes. Both are absurd for a constant answer.
+3. **It rots.** A seed checked today with zero balance can receive coins
+   tomorrow. A permanent skip list gets more wrong the longer you keep it —
+   which is also why the tool checks balance rather than "was this ever used".
 
 ## Filter sizing
 

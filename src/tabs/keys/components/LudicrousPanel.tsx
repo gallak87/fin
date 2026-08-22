@@ -12,6 +12,11 @@ interface Props {
   info: FilterInfo | null
   threads: number
   maxThreads: number
+  /** filter matches seen, and what the chain said about them */
+  maybes: number
+  confirmed: number
+  pending: number
+  failed: number
   disabled: boolean
   error: string | null
   onThreads: (n: number) => void
@@ -36,6 +41,10 @@ export function LudicrousPanel({
   info,
   threads,
   maxThreads,
+  maybes,
+  confirmed,
+  pending,
+  failed,
   disabled,
   error,
   onThreads,
@@ -44,7 +53,7 @@ export function LudicrousPanel({
   onLoadFilter,
 }: Props) {
   const fileInput = useRef<HTMLInputElement>(null)
-  const { running, rate, checked, candidates, perWorker, stream } = state
+  const { running, rate, checked, perWorker, stream } = state
   const peak = Math.max(1, ...perWorker)
 
   return (
@@ -109,11 +118,16 @@ export function LudicrousPanel({
           tone={running ? 'text-amber-300 drop-shadow-[0_0_14px_rgba(251,191,36,0.45)]' : 'text-gray-600'}
         />
         <Stat value={checked.toLocaleString()} label="derived this run" tone="text-gray-300" />
-        <Stat
-          value={candidates.toLocaleString()}
-          label="filter hits"
-          tone={candidates > 0 ? 'text-emerald-400' : 'text-gray-600'}
-        />
+        <div>
+          <div className="font-mono text-3xl leading-none tabular-nums">
+            <span className={maybes > 0 ? 'text-amber-300' : 'text-gray-600'}>{maybes}</span>
+            <span className="text-gray-700"> · </span>
+            <span className={confirmed > 0 ? 'text-emerald-400' : 'text-gray-600'}>{confirmed}</span>
+          </div>
+          <div className="mt-1 text-[10px] tracking-wide text-gray-500 uppercase">
+            maybes · confirmed real
+          </div>
+        </div>
         {running && rate > 0 && (
           <div className="ml-auto text-right">
             <div className="font-mono text-lg text-orange-400 tabular-nums">
@@ -171,6 +185,19 @@ export function LudicrousPanel({
           The starter set is a sample, not the chain — it covers a few thousand of the ~50M funded
           addresses. Ludicrous is faster and blinder than chain mode. Build a full filter with{' '}
           <code className="text-amber-400/80">npm run keys:filter</code>.
+        </p>
+      )}
+
+      {maybes > 0 && (
+        <p className="px-4 pb-2 text-[11px] text-gray-500">
+          A maybe is the fast filter guessing — roughly one per million addresses checked. Each one
+          gets looked up on the real chain:{' '}
+          <span className="text-gray-400">{maybes - pending - failed} came back empty</span>
+          {pending > 0 && <span className="text-amber-400"> · {pending} still checking</span>}
+          {failed > 0 && (
+            <span className="text-red-400"> · {failed} could not be checked (network)</span>
+          )}
+          . Only a confirmed balance stops the engine.
         </p>
       )}
 

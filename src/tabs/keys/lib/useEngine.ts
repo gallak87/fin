@@ -16,8 +16,6 @@ export interface EngineState {
   /** per-worker rate, for the activity bars */
   perWorker: number[]
   stream: EngineSample[]
-  /** addresses that matched the filter and are being verified against the chain */
-  candidates: number
 }
 
 const IDLE: EngineState = {
@@ -26,7 +24,6 @@ const IDLE: EngineState = {
   rate: 0,
   perWorker: [],
   stream: [],
-  candidates: 0,
 }
 
 /**
@@ -38,7 +35,6 @@ export function useEngine(onCandidate: (words: string[], address: string) => voi
   const [state, setState] = useState<EngineState>(IDLE)
   const workers = useRef<Worker[]>([])
   const checked = useRef(0)
-  const candidates = useRef(0)
   const rates = useRef<number[]>([])
   const stream = useRef<EngineSample[]>([])
   const dirty = useRef(false)
@@ -59,7 +55,6 @@ export function useEngine(onCandidate: (words: string[], address: string) => voi
     (pins: (string | null)[], filter: Bloom, threads: number) => {
       stop()
       checked.current = 0
-      candidates.current = 0
       stream.current = []
       rates.current = Array(threads).fill(0)
 
@@ -77,7 +72,6 @@ export function useEngine(onCandidate: (words: string[], address: string) => voi
               stream.current = [msg.sample, ...stream.current].slice(0, STREAM_ROWS)
             }
           } else {
-            candidates.current += 1
             candidateCb.current(msg.words, msg.address)
           }
           dirty.current = true
@@ -101,7 +95,6 @@ export function useEngine(onCandidate: (words: string[], address: string) => voi
           ? {
               ...s,
               checked: checked.current,
-              candidates: candidates.current,
               rate: rates.current.reduce((a, b) => a + b, 0),
               perWorker: [...rates.current],
               stream: stream.current,

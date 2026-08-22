@@ -1,13 +1,7 @@
-import { groupDigits, sci } from '../lib/seed'
+import { groupDigits, sci, sciNum } from '../lib/seed'
 
 const YEAR_SECONDS = 31_557_600
 const UNIVERSE_SECONDS = 4.35e17 // ~13.8 billion years
-
-function sciNum(n: number, dp = 1): string {
-  if (n < 1000) return n.toFixed(n < 10 ? 1 : 0)
-  const exp = Math.floor(Math.log10(n))
-  return `${(n / 10 ** exp).toFixed(dp)} × 10^${exp}`
-}
 
 function fmtSpan(seconds: number): string {
   if (!isFinite(seconds) || seconds <= 0) return '—'

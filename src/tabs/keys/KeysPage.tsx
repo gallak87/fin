@@ -10,6 +10,7 @@ import { MAX_THREADS, useEngine } from './lib/useEngine'
 import { loadFilterFile, loadStarterFilter } from './lib/funded'
 import type { FilterInfo } from './lib/funded'
 import { fetchStats, totals, ZERO } from './lib/balance'
+import { appendHit, loadHits, loadLifetime, saveLifetime } from './lib/storage'
 import type { AddrStat } from './lib/balance'
 import {
   deriveAddresses,
@@ -17,6 +18,7 @@ import {
   isValidPhrase,
   isWord,
   searchSpace,
+  sciNum,
   solveLastWord,
   spin,
 } from './lib/seed'
@@ -28,6 +30,35 @@ const DEEP_DEPTH = 10
 const WALL_LIMIT = 300
 
 type Mode = 'chain' | 'ludicrous'
+
+/** every 24-word phrase there is, as a float for the lifetime fraction */
+const ALL_SEEDS = Number(2n ** 256n)
+
+export type CandidateStatus = 'checking' | 'cleared' | 'funded' | 'failed'
+
+export interface Candidate {
+  address: string
+  words: string[]
+  status: CandidateStatus
+}
+
+/**
+ * Confirm a filter match against the chain. The filter is allowed to be wrong
+ * in one direction, so this is what separates "maybe" from "real" — and it
+ * retries rather than shrugging, because a dropped request used to look
+ * identical to a cleared one.
+ */
+async function verifyAddress(address: string) {
+  for (let attempt = 0; attempt < 4; attempt++) {
+    try {
+      const map = await fetchStats([address])
+      return map.get(address) ?? ZERO
+    } catch {
+      if (attempt < 3) await new Promise((r) => setTimeout(r, 800 * 2 ** attempt))
+    }
+  }
+  return null
+}
 
 interface Lookup {
   key: string
@@ -70,7 +101,20 @@ export default function KeysPage() {
   const [rows, setRows] = useState<SpinRow[]>([])
   // the wall is capped for memory; the tally is not
   const [checked, setChecked] = useState(0)
-  const [hit, setHit] = useState<SpinRow | null>(null)
+  const [hit, setHit] = useState<SpinRow | null>(() => {
+    const saved = loadHits()[0]
+    return saved
+      ? {
+          key: saved.words.join(' '),
+          words: saved.words,
+          address: saved.address,
+          balance: saved.balance,
+          txs: saved.txs,
+        }
+      : null
+  })
+  const [candidates, setCandidates] = useState<Candidate[]>([])
+  const [lifetimeBase, setLifetimeBase] = useState(loadLifetime)
   const [elapsed, setElapsed] = useState(0)
   const [retry, setRetry] = useState(0)
   const [mode, setMode] = useState<Mode>('chain')
@@ -163,17 +207,34 @@ export default function KeysPage() {
     }
   }, [addresses, phrase, lookupKey])
 
-  // a filter hit is only a maybe — the bloom can false-positive and the set can
-  // hold spent addresses, so confirm against the chain before celebrating
+  // a filter match is only a maybe — the bloom can false-positive and a sampled
+  // address can be spent later, so confirm against the chain before celebrating
   const onCandidate = useCallback(async (words: string[], address: string) => {
-    try {
-      const map = await fetchStats([address])
-      const stat = map.get(address)
-      if (stat && stat.balance > 0) {
-        setHit({ key: words.join(' '), words, address, balance: stat.balance, txs: stat.txs })
-      }
-    } catch {
-      // best effort: a failed verification shouldn't stop the engine
+    setCandidates((prev) =>
+      prev.some((c) => c.address === address)
+        ? prev
+        : [...prev, { address, words, status: 'checking' }],
+    )
+    const resolve = (status: CandidateStatus) =>
+      setCandidates((prev) => prev.map((c) => (c.address === address ? { ...c, status } : c)))
+
+    const stat = await verifyAddress(address)
+    if (!stat) {
+      resolve('failed')
+      return
+    }
+    if (stat.balance > 0) {
+      appendHit({
+        words,
+        address,
+        balance: stat.balance,
+        txs: stat.txs,
+        found: new Date().toISOString(),
+      })
+      setHit({ key: words.join(' '), words, address, balance: stat.balance, txs: stat.txs })
+      resolve('funded')
+    } else {
+      resolve('cleared')
     }
   }, [])
 
@@ -276,6 +337,7 @@ export default function KeysPage() {
   const startEngine = useCallback(() => {
     if (!filter) return
     setEngineError(null)
+    setLifetimeBase((b) => b + engine.state.checked)
     engine.start(
       slots.map((s) => (s.pinned && s.word ? s.word : null)),
       filter.filter,
@@ -300,6 +362,19 @@ export default function KeysPage() {
     },
     [engineStop],
   )
+
+  const lifetime = lifetimeBase + engine.state.checked + checked
+  const lifetimeRef = useRef(lifetime)
+  useEffect(() => {
+    lifetimeRef.current = lifetime
+  })
+  useEffect(() => {
+    const id = setInterval(() => saveLifetime(lifetimeRef.current), 2000)
+    return () => {
+      clearInterval(id)
+      saveLifetime(lifetimeRef.current)
+    }
+  }, [])
 
   const allPinned = pinnedCount === count
   const badWord = words.some((w) => w !== '' && !isWord(w))
@@ -465,6 +540,10 @@ export default function KeysPage() {
           maxThreads={MAX_THREADS}
           disabled={allPinned || !filter}
           error={engineError}
+          maybes={candidates.length}
+          confirmed={candidates.filter((c) => c.status === 'funded').length}
+          pending={candidates.filter((c) => c.status === 'checking').length}
+          failed={candidates.filter((c) => c.status === 'failed').length}
           onThreads={setThreads}
           onStart={startEngine}
           onStop={engineStop}
@@ -488,6 +567,14 @@ export default function KeysPage() {
       {mode === 'chain' && <SpinFeed rows={rows} total={checked} onPick={loadPhrase} />}
 
       <p className="pb-6 text-center text-[11px] text-gray-700">
+        {lifetime > 0 && (
+          <>
+            You have checked{' '}
+            <span className="text-gray-500">{Math.round(lifetime).toLocaleString()}</span> seeds,
+            all time — {sciNum(lifetime / ALL_SEEDS)} of them.
+            <br />
+          </>
+        )}
         Keys never leave your browser. Balances come from blockchain.info · mempool.space.
       </p>
     </main>

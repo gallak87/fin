@@ -262,6 +262,17 @@ export function searchSpace(pinned: boolean[], count: WordCount): bigint {
 
 // --------------------------------------------------------------- formatting
 
+/** Same idea as sci(), for values that arrive as plain numbers. */
+export function sciNum(n: number, dp = 1): string {
+  if (!isFinite(n)) return '∞'
+  if (n === 0) return '0'
+  if (n >= 1000 || n < 0.001) {
+    const exp = Math.floor(Math.log10(Math.abs(n)))
+    return `${(n / 10 ** exp).toFixed(dp)} × 10^${exp}`
+  }
+  return n < 10 ? n.toFixed(1) : n.toFixed(0)
+}
+
 /** "1.16 × 10^77" — big numbers, honestly. */
 export function sci(n: bigint, dp = 2): string {
   if (n < 1000n) return n.toString()
