@@ -1,18 +1,18 @@
-# Seed Roulette — engine roadmap
+# BTC Roulette — engine roadmap
 
 How to make the spinner fast, and what "fast" is actually worth.
 
 ## Where it stands
 
-Two engines, picked with the Chain / Ludicrous toggle.
+Two engines, picked with the Manual / Ludicrous toggle.
 
-**Chain mode** spins on the main thread and checks every seed against a live API:
+**Manual mode** spins on the main thread and checks every seed against a live API:
 ~15ms of derivation plus a debounced round trip, self-throttled to roughly one
 seed every 2 seconds. Slow, but it sees the whole chain.
 
 **Ludicrous mode** (option A below, shipped) runs a worker per core against a
 local Bloom filter, no network in the loop. Measured **72 seeds/sec per core** —
-~720/sec on 10 cores, about **1,400× chain mode**. Faster and blinder: it only
+~720/sec on 10 cores, about **1,400× manual mode**. Faster and blinder: it only
 sees what the loaded filter holds.
 
 - `lib/seed.ts` — BIP39 ↔ addresses, the pin/roll solver, search-space math
@@ -173,7 +173,7 @@ the one that ever finds anything.
 
 - **The starter filter is a sample, not the chain.** ~2.6k of ~50M funded
   addresses, so Ludicrous mode is ~1,400× faster and roughly 19,000× blinder
-  than chain mode. Honest framing is in the panel; the fix is running
+  than manual mode. Honest framing is in the panel; the fix is running
   `npm run keys:filter` against a real dump and loading the result.
 - The loaded filter lives in memory only — reloading the page drops it. OPFS
   caching is the obvious follow-up.

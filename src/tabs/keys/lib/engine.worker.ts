@@ -1,7 +1,7 @@
 /**
  * One derivation worker. Rolls seeds against the pinned words and tests every
  * derived address against a local Bloom filter — no network in the hot loop,
- * which is the entire reason this is ~1000x the chain-checked spinner.
+ * which is the entire reason this is ~1000x the manual spinner.
  */
 import { bloomHas, deserializeBloom } from './bloom'
 import type { Bloom } from './bloom'

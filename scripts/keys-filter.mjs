@@ -1,5 +1,5 @@
 /**
- * Build a full Bloom filter of funded addresses for Seed Roulette's local
+ * Build a full Bloom filter of funded addresses for BTC Roulette's local
  * engine, from a dump of one address per line (Blockchair / Loyce.club daily
  * lists; a trailing balance column is ignored).
  *

@@ -29,7 +29,7 @@ const SPIN_MS = 1800
 const DEEP_DEPTH = 10
 const WALL_LIMIT = 300
 
-type Mode = 'chain' | 'ludicrous'
+type Mode = 'manual' | 'ludicrous'
 
 /** every 24-word phrase there is, as a float for the lifetime fraction */
 const ALL_SEEDS = Number(2n ** 256n)
@@ -117,7 +117,7 @@ export default function KeysPage() {
   const [lifetimeBase, setLifetimeBase] = useState(loadLifetime)
   const [elapsed, setElapsed] = useState(0)
   const [retry, setRetry] = useState(0)
-  const [mode, setMode] = useState<Mode>('chain')
+  const [mode, setMode] = useState<Mode>('ludicrous')
   const [filter, setFilter] = useState<FilterInfo | null>(null)
   const [threads, setThreads] = useState(MAX_THREADS)
   const [engineError, setEngineError] = useState<string | null>(null)
@@ -391,9 +391,9 @@ export default function KeysPage() {
     <main className="mx-auto max-w-4xl space-y-3 p-4">
       <header className="flex flex-wrap items-start justify-between gap-3 pt-2 pb-1">
         <div>
-          <h1 className="text-xl font-semibold tracking-tight">Seed Roulette</h1>
+          <h1 className="text-xl font-semibold tracking-tight">BTC Roulette</h1>
           <p className="mt-0.5 text-[13px] text-gray-500">
-            {mode === 'chain'
+            {mode === 'manual'
               ? 'Pin the words you know. Roll the rest. Every spin gets checked against the chain.'
               : 'Every core you own, rolling seeds against a local filter. No network in the loop.'}
           </p>
@@ -401,7 +401,7 @@ export default function KeysPage() {
         <div className="flex overflow-hidden rounded-lg border border-gray-800">
           {(
             [
-              ['chain', 'Chain'],
+              ['manual', 'Manual'],
               ['ludicrous', 'Ludicrous'],
             ] as const
           ).map(([id, label]) => (
@@ -493,7 +493,7 @@ export default function KeysPage() {
                 ? 'all 24 pinned — unpin a word to roll'
                 : `${pinnedCount} pinned · ${count - pinnedCount} rolling`}
           </span>
-          <div className={`flex items-center gap-2 ${mode === 'chain' ? '' : 'hidden'}`}>
+          <div className={`flex items-center gap-2 ${mode === 'manual' ? '' : 'hidden'}`}>
             <button
               onClick={doSpin}
               disabled={allPinned || auto}
@@ -522,9 +522,9 @@ export default function KeysPage() {
       <OddsStrip
         space={space}
         pinned={pinnedCount}
-        checked={mode === 'chain' ? checked : engine.state.checked}
+        checked={mode === 'manual' ? checked : engine.state.checked}
         rate={
-          mode === 'chain'
+          mode === 'manual'
             ? elapsed > 0
               ? checked / (elapsed / 1000)
               : 0
@@ -551,7 +551,7 @@ export default function KeysPage() {
         />
       )}
 
-      {mode === 'chain' && valid && (
+      {mode === 'manual' && valid && (
         <SeedResult
           phrase={words}
           addresses={addresses}
@@ -564,7 +564,7 @@ export default function KeysPage() {
         />
       )}
 
-      {mode === 'chain' && <SpinFeed rows={rows} total={checked} onPick={loadPhrase} />}
+      {mode === 'manual' && <SpinFeed rows={rows} total={checked} onPick={loadPhrase} />}
 
       <p className="pb-6 text-center text-[11px] text-gray-700">
         {lifetime > 0 && (

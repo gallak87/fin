@@ -7,14 +7,14 @@ const KeysPage = lazy(() => import('./tabs/keys/KeysPage'))
 type Tab = 'rent-vs-buy' | 'backtester' | 'keys'
 
 const TABS: { id: Tab; label: string }[] = [
+  { id: 'keys', label: 'BTC Roulette' },
   { id: 'backtester', label: 'Backtester' },
   { id: 'rent-vs-buy', label: 'Rent vs Buy' },
-  { id: 'keys', label: 'Seed Roulette' },
 ]
 
 function initialTab(): Tab {
   const saved = localStorage.getItem('fin-tab')
-  return saved === 'rent-vs-buy' || saved === 'keys' ? saved : 'backtester'
+  return saved === 'rent-vs-buy' || saved === 'backtester' ? saved : 'keys'
 }
 
 export default function App() {

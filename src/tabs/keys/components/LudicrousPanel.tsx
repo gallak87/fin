@@ -4,8 +4,8 @@ import type { FilterInfo } from '../lib/funded'
 import { fmtBytes } from '../lib/funded'
 import { shortAddr, shortPhrase } from '../lib/seed'
 
-/** the chain-checked spinner manages about one seed every two seconds */
-const CHAIN_RATE = 0.5
+/** the one-at-a-time manual spinner manages about one seed every two seconds */
+const MANUAL_RATE = 0.5
 
 interface Props {
   state: EngineState
@@ -131,9 +131,9 @@ export function LudicrousPanel({
         {running && rate > 0 && (
           <div className="ml-auto text-right">
             <div className="font-mono text-lg text-orange-400 tabular-nums">
-              {Math.round(rate / CHAIN_RATE).toLocaleString()}×
+              {Math.round(rate / MANUAL_RATE).toLocaleString()}×
             </div>
-            <div className="text-[10px] tracking-wide text-gray-500 uppercase">vs chain mode</div>
+            <div className="text-[10px] tracking-wide text-gray-500 uppercase">vs manual mode</div>
           </div>
         )}
       </div>
@@ -183,7 +183,7 @@ export function LudicrousPanel({
       {!info?.full && (
         <p className="px-4 pb-2 text-[11px] text-amber-500/70">
           The starter set is a sample, not the chain — it covers a few thousand of the ~50M funded
-          addresses. Ludicrous is faster and blinder than chain mode. Build a full filter with{' '}
+          addresses. Ludicrous is faster and blinder than manual mode. Build a full filter with{' '}
           <code className="text-amber-400/80">npm run keys:filter</code>.
         </p>
       )}

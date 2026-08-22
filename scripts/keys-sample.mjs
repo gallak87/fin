@@ -1,5 +1,5 @@
 /**
- * Build the starter set of funded addresses for Seed Roulette's local filter.
+ * Build the starter set of funded addresses for BTC Roulette's local filter.
  *
  * Samples real output addresses from recent blocks, then keeps only the ones a
  * balance lookup confirms are currently funded — so every address shipped in
