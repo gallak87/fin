@@ -21,7 +21,8 @@ sees what the loaded filter holds.
 - `lib/engine.worker.ts` + `lib/useEngine.ts` — the pool
 - `scripts/keys-sample.mjs` — starter set, every address verified funded
 - `scripts/keys-filter.mjs` — dump → `.bloom`, imports the app's own bloom.ts so
-  the build hash can't drift from the read hash
+  the build hash can't drift from the read hash; streams from stdin and stops
+  early on a `--min` floor
 - 6 addresses checked per seed: BIP44/49/84 × receive/change, index 0
 
 ## The constraint
@@ -104,6 +105,30 @@ times over.
    tomorrow. A permanent skip list gets more wrong the longer you keep it —
    which is also why the tool checks balance rather than "was this ever used".
 
+## Building a real filter
+
+The Blockchair/Loyce dumps are sorted by balance descending, so a balance floor
+stops reading early instead of pulling the whole 1.8GB:
+
+```sh
+curl -s http://addresses.loyce.club/blockchair_bitcoin_addresses_and_balance_LATEST.tsv.gz \
+  | gunzip | npm run keys:filter -- - rich.bloom --min 1
+```
+
+Measured: **971,337 addresses hold ≥ 1 BTC → a 3.5MB filter, built in 2.3
+seconds.** Ten workers each holding a copy is 35MB, which is nothing.
+
+That is the sweet spot. Chasing all ~50M funded addresses buys mostly dust
+wallets, costs a 180MB filter, and runs into the copy-per-worker problem below.
+
+### Why the full set is awkward
+
+`useEngine` posts the filter to each worker, so every worker holds its own copy.
+Fine at 3.5MB (35MB total), fatal at 180MB (1.8GB). Fixing that means one
+filter worker doing membership tests for N derive workers, which batch addresses
+to it — one copy, no SharedArrayBuffer, no cross-origin isolation headers. Worth
+doing only if the full set ever actually matters.
+
 ## Filter sizing
 
 Bloom filter at a 1-in-a-million false positive rate costs ~28.8 bits per
@@ -172,9 +197,11 @@ the one that ever finds anything.
 ## Smaller gaps in the page today
 
 - **The starter filter is a sample, not the chain.** ~2.6k of ~50M funded
-  addresses, so Ludicrous mode is ~1,400× faster and roughly 19,000× blinder
-  than manual mode. Honest framing is in the panel; the fix is running
-  `npm run keys:filter` against a real dump and loading the result.
+  addresses. Ludicrous is ~1,400× faster than manual but ~19,000× blinder, which
+  nets out to manual being **~14× more likely to find something** — the bundled
+  engine is a slot machine, not a search. A `--min 1` filter (971k addresses)
+  flips that to ~27× better than manual, and far better again weighted by how
+  much money those addresses actually hold.
 - The loaded filter lives in memory only — reloading the page drops it. OPFS
   caching is the obvious follow-up.
 

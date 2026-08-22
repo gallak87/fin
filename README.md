@@ -21,7 +21,7 @@ BIP39 seed phrase explorer. Pin the words you know, roll the rest, check what co
 - **One grid, two extremes**: pin nothing and it's a roulette, pin all 24 and it's a decoder, pin the 18 you remember and it's the only version that ever pays out
 - **Real derivation**: BIP44/49/84, receive + change, verified against the published test vectors — 13 vitest cases
 - **Live search space**: each pinned word visibly cuts it by 2048×, with honest odds and time-to-exhaust
-- **Ludicrous mode**: a worker per core against a local Bloom filter, ~72 seeds/sec/core (~1,400× the manual spinner). Ships with a starter set of confirmed-funded addresses; `npm run keys:filter` builds a full one from a dump
+- **Ludicrous mode**: a worker per core against a local Bloom filter, ~72 seeds/sec/core (~1,400× the manual spinner). ships with a starter set of confirmed-funded addresses, and `npm run keys:filter` streams a real dump into a filter of every address over a balance floor (971k addresses ≥ 1 BTC = a 3.5MB filter, built in seconds)
 - Checksum solver runs on the raw bitstream, so a spin costs 0.03ms instead of 167ms
 
 Engine notes and what partial recovery actually costs: `keys-roadmap.md`.
