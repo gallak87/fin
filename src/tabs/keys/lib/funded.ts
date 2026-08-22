@@ -1,37 +1,39 @@
 /**
  * The address set the local engine checks against.
  *
- * Ships with a starter set sampled from recent blocks, every entry confirmed
- * funded by a balance lookup at build time (`npm run keys:sample`). It is a
- * rounding error next to the ~50M funded addresses that exist — load a full
- * filter built by `npm run keys:filter` to cover the real set.
+ * Ships with every address holding at least 1 BTC — ~971k of them in a 3.5MB
+ * filter, fetched once and cached by the browser. That is where the money
+ * actually is; the other ~49M funded addresses are mostly dust and would cost
+ * 180MB to cover. Load a wider filter from the panel if you want them.
  */
+import bundledUrl from '../data/funded.bloom?url'
 import type { Bloom } from './bloom'
-import { bloomFrom, deserializeBloom } from './bloom'
+import { deserializeBloom } from './bloom'
 
 export interface FilterInfo {
   filter: Bloom
   label: string
   count: number
   bytes: number
-  /** true once a full filter file replaces the bundled starter set */
-  full: boolean
+  /** true when the user loaded their own filter file over the bundled one */
+  custom: boolean
 }
 
-let starter: FilterInfo | null = null
+let bundled: FilterInfo | null = null
 
-export async function loadStarterFilter(): Promise<FilterInfo> {
-  if (starter) return starter
-  const data = (await import('../data/funded.json')).default
-  const filter = bloomFrom(data.addresses)
-  starter = {
+export async function loadBundledFilter(): Promise<FilterInfo> {
+  if (bundled) return bundled
+  const res = await fetch(bundledUrl)
+  if (!res.ok) throw new Error(`could not load the bundled filter (${res.status})`)
+  const filter = deserializeBloom(await res.arrayBuffer())
+  bundled = {
     filter,
-    label: `starter set · sampled ${data.built}`,
-    count: data.addresses.length,
+    label: 'bundled · every address holding ≥ 1 BTC',
+    count: filter.n,
     bytes: filter.bits.length,
-    full: false,
+    custom: false,
   }
-  return starter
+  return bundled
 }
 
 export function loadFilterFile(buf: ArrayBuffer, name: string): FilterInfo {
@@ -41,7 +43,7 @@ export function loadFilterFile(buf: ArrayBuffer, name: string): FilterInfo {
     label: name,
     count: filter.n,
     bytes: filter.bits.length,
-    full: true,
+    custom: true,
   }
 }
 

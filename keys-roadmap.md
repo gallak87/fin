@@ -19,7 +19,7 @@ sees what the loaded filter holds.
 - `lib/balance.ts` — bulk balance lookups (blockchain.info, mempool.space fallback)
 - `lib/bloom.ts` — filter, sized the same for 2.6k entries or 50M
 - `lib/engine.worker.ts` + `lib/useEngine.ts` — the pool
-- `scripts/keys-sample.mjs` — starter set, every address verified funded
+- `src/tabs/keys/data/funded.bloom` — the bundled filter, committed
 - `scripts/keys-filter.mjs` — dump → `.bloom`, imports the app's own bloom.ts so
   the build hash can't drift from the read hash; streams from stdin and stops
   early on a `--min` floor
@@ -36,8 +36,8 @@ are only three shapes this can take.
 against a Bloom filter of funded addresses. No server, no dev-mode dependency,
 works on the deployed Pages site.
 
-Ships with a starter filter of ~2.6k addresses sampled from recent blocks, each
-one confirmed funded by a balance lookup at build time. A filter match is only a
+Bundles a filter of every address holding at least 1 BTC — 971,337 of them in
+3.5MB, fetched once and cached, no button to press. A filter match is only a
 maybe — the bloom can false-positive and a sampled address can be spent later —
 so every candidate is verified against the chain, with retries, before the hit
 banner fires. The panel shows each maybe's outcome (cleared / still checking /
@@ -196,14 +196,15 @@ the one that ever finds anything.
 
 ## Smaller gaps in the page today
 
-- **The starter filter is a sample, not the chain.** ~2.6k of ~50M funded
-  addresses. Ludicrous is ~1,400× faster than manual but ~19,000× blinder, which
-  nets out to manual being **~14× more likely to find something** — the bundled
-  engine is a slot machine, not a search. A `--min 1` filter (971k addresses)
-  flips that to ~27× better than manual, and far better again weighted by how
-  much money those addresses actually hold.
-- The loaded filter lives in memory only — reloading the page drops it. OPFS
-  caching is the obvious follow-up.
+- **The bundled filter stops at 1 BTC.** 971k addresses out of ~50M funded ones,
+  so Ludicrous is still blinder than manual — but at ~27× more likely to find
+  something rather than the 14× *worse* the old 2.6k starter set managed.
+  Everything below 1 BTC is uncovered; `--min 0.1` widens it to ~4M/15MB.
+- **The bundled filter is a committed 3.5MB binary.** Regenerating it monthly
+  adds another 3.5MB to git history each time. If it starts getting refreshed
+  often, move it out of the repo and fetch it at runtime.
+- A *custom* filter loaded from the panel lives in memory only — reloading drops
+  back to the bundled one. IndexedDB would make a custom filter stick too.
 
 - **Auto-spin can roll past a live wallet.** It only checks index 0 of the six
   standard spots; funds at receive index 4 are invisible to it. Escalate to the

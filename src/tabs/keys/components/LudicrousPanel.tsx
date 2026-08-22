@@ -154,8 +154,8 @@ export function LudicrousPanel({
           {info ? (
             <>
               filter · <span className="text-gray-300">{info.count.toLocaleString()}</span>{' '}
-              {info.full ? 'addresses' : 'confirmed-funded addresses'} ·{' '}
-              {fmtBytes(info.bytes)} · <span className="text-gray-600">{info.label}</span>
+              addresses · {fmtBytes(info.bytes)} ·{' '}
+              <span className="text-gray-600">{info.label}</span>
             </>
           ) : (
             'loading filter…'
@@ -180,11 +180,11 @@ export function LudicrousPanel({
         />
       </div>
 
-      {!info?.full && (
-        <p className="px-4 pb-2 text-[11px] text-amber-500/70">
-          The starter set is a sample, not the chain — it covers a few thousand of the ~50M funded
-          addresses. Ludicrous is faster and blinder than manual mode. Build a full filter with{' '}
-          <code className="text-amber-400/80">npm run keys:filter</code>.
+      {info && !info.custom && (
+        <p className="px-4 pb-2 text-[11px] text-gray-500">
+          Covers the addresses holding real money, not all ~50M funded ones — so Ludicrous is still
+          blinder than manual mode, just no longer worse at finding something. Widen it with{' '}
+          <code className="text-gray-400">npm run keys:filter -- - f.bloom --min 0.1</code>.
         </p>
       )}
 

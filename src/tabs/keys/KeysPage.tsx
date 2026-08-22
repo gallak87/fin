@@ -7,7 +7,7 @@ import { SpinFeed } from './components/SpinFeed'
 import type { SpinRow } from './components/SpinFeed'
 import { LudicrousPanel } from './components/LudicrousPanel'
 import { MAX_THREADS, useEngine } from './lib/useEngine'
-import { loadFilterFile, loadStarterFilter } from './lib/funded'
+import { loadBundledFilter, loadFilterFile } from './lib/funded'
 import type { FilterInfo } from './lib/funded'
 import { fetchStats, totals, ZERO } from './lib/balance'
 import { appendHit, loadHits, loadLifetime, saveLifetime } from './lib/storage'
@@ -244,7 +244,7 @@ export default function KeysPage() {
   useEffect(() => {
     if (mode !== 'ludicrous' || filter) return
     let cancelled = false
-    loadStarterFilter()
+    loadBundledFilter()
       .then((info) => {
         if (!cancelled) setFilter(info)
       })
