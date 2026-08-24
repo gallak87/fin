@@ -71,11 +71,14 @@ export default function BacktesterPage({ drawerOpen }: { drawerOpen: boolean }) 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  // Desktop pins the row to the viewport so the two columns scroll on their own
+  // — tweak a knob without losing your place in the charts. Mobile keeps one
+  // page scroll, with the sidebar as a drawer above it.
   return (
-    <div className="flex flex-col md:flex-row min-h-[calc(100vh-53px)]">
+    <div className="flex flex-col md:flex-row min-h-[calc(100vh-53px)] md:h-[calc(100vh-53px)] md:min-h-0 md:overflow-hidden">
       <aside
         className={`
-          md:w-80 md:shrink-0 md:block md:border-r md:border-gray-800 md:overflow-y-auto
+          md:w-80 md:shrink-0 md:block md:border-r md:border-gray-800 md:overflow-y-auto md:min-h-0
           ${drawerOpen ? 'block' : 'hidden'}
           bg-gray-950 border-b border-gray-800
         `}
@@ -85,7 +88,7 @@ export default function BacktesterPage({ drawerOpen }: { drawerOpen: boolean }) 
         </div>
       </aside>
 
-      <main className="flex-1 overflow-y-auto p-3 space-y-3">
+      <main className="flex-1 md:min-h-0 overflow-y-auto p-3 space-y-3">
         {strategyId === CUSTOM_ID && <CustomCodePanel />}
         {!bars || !result ? (
           <Skeleton />
