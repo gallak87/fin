@@ -164,3 +164,47 @@ export function rsi(v: number[], n: number): (number | null)[] {
   }
   return out
 }
+
+/** SMA over an array that may still be warming up; null propagates. */
+function smaOfNullable(v: (number | null)[], n: number): (number | null)[] {
+  const out: (number | null)[] = new Array(v.length).fill(null)
+  if (n <= 1) return v.slice()
+  for (let i = n - 1; i < v.length; i++) {
+    let sum = 0
+    let ok = true
+    for (let j = i - n + 1; j <= i; j++) {
+      if (v[j] == null) {
+        ok = false
+        break
+      }
+      sum += v[j]!
+    }
+    if (ok) out[i] = sum / n
+  }
+  return out
+}
+
+/**
+ * Stochastic oscillator: where the close sits in the last `n` bars' range,
+ * 0–100. %K is smoothed over `smooth` bars, %D is the SMA of %K over `dN`.
+ */
+export function stochastic(
+  bars: { h: number; l: number; c: number }[],
+  n: number,
+  smooth: number,
+  dN = 3,
+): { k: (number | null)[]; d: (number | null)[] } {
+  const raw: (number | null)[] = new Array(bars.length).fill(null)
+  for (let i = n - 1; i < bars.length; i++) {
+    let hi = -Infinity
+    let lo = Infinity
+    for (let j = i - n + 1; j <= i; j++) {
+      if (bars[j].h > hi) hi = bars[j].h
+      if (bars[j].l < lo) lo = bars[j].l
+    }
+    // a flat range has no information — call it the midpoint
+    raw[i] = hi > lo ? ((bars[i].c - lo) / (hi - lo)) * 100 : 50
+  }
+  const k = smaOfNullable(raw, smooth)
+  return { k, d: smaOfNullable(k, dN) }
+}

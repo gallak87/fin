@@ -71,9 +71,16 @@ export interface Trade {
   mfePct?: number
   /** bars held (set on close) */
   barsHeld?: number
+  /** initial risk: entry → first protective stop, as a fraction of entry (> 0) */
+  riskPct?: number
+  /** protective exit the strategy never asked for, and price came back without you */
+  bailedEarly?: boolean
 }
 
-export type SizingMode = 'all' | 'fixed' | 'vol'
+export type SizingMode = 'all' | 'fixed' | 'vol' | 'drawdown'
+
+/** 'pct' = fixed % under the peak; 'structure' = recent low minus a volatility buffer. */
+export type TrailMode = 'pct' | 'structure'
 
 /** Engine-level knobs that apply to any strategy. 0 disables an exit/filter. */
 export interface EngineSettings {
@@ -82,8 +89,13 @@ export interface EngineSettings {
   sizingMode: SizingMode
   fixedPct: number // % of equity per entry, sizingMode 'fixed'
   volTargetPct: number // annualized vol target %, sizingMode 'vol'
+  ddBudgetPct: number // equity drawdown that takes size to zero, sizingMode 'drawdown'
   stopPct: number // stop-loss % below entry
-  trailPct: number // trailing stop % below peak high
+  trailMode: TrailMode
+  trailPct: number // trailing stop % below peak high, trailMode 'pct'
+  trailLookback: number // bars of lows the stop hangs from, trailMode 'structure'
+  trailAtrDays: number // ATR window for the volatility buffer
+  trailAtrMult: number // buffer width, in ATRs
   tpPct: number // take-profit % above entry
   maxBars: number // time exit after N bars
   regimeMaDays: number // only long while close > N-day MA

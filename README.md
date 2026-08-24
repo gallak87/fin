@@ -6,8 +6,10 @@ Personal finance lab. **[→ Open app](https://gallak87.github.io/fin/)**
 
 Strategy experimentation lab — try an idea in under a minute and understand why it won or lost.
 
-- **9 strategies** (MA cross, RSI, MACD, Donchian, Bollinger, momentum, dip-buyer, B&H, DCA) + custom JS escape hatch
-- **Honest engine**: next-open fills, intrabar stops (gap-aware), trailing/take-profit/time exits, position sizing, regime filter, friction — 25 vitest cases
+- **10 strategies** (MA cross, RSI, MACD, Donchian, Bollinger, stochastic, momentum, dip-buyer, B&H, DCA) + custom JS escape hatch
+- **Honest engine**: next-open fills, intrabar stops (gap-aware), trailing/take-profit/time exits, position sizing, regime filter, friction — 29 vitest cases
+- **Two trailing stops**: a fixed % under the peak, or a structure stop hung under the recent lows with an ATR buffer. Both ratchet, both read only closed bars
+- **Exit quality**: what share of the profit a trade showed you survived to the exit, what it gave back, the payoff in units of entry risk, and how often a stop fired on a trade that came back
 - **Robustness gauntlet**: one button runs vs-random → param-plateau sweep → walk-forward → Monte Carlo, with a pass/warn/fail scorecard and plain-words verdicts ("drawdown insurance, priced" / "trading noise")
 - **Playbook**: bundled field-tested presets + your saved setups in localStorage
 - Bar-by-bar replay with bear-market shading; lands at the end of the tape, replay is opt-in

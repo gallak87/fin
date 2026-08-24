@@ -1,5 +1,5 @@
 import type { Signal, Strategy } from './types'
-import { sma, ema, rsi, macd, bollinger, donchian, roc, drawdownFromPeak } from './indicators'
+import { sma, ema, rsi, macd, bollinger, donchian, roc, drawdownFromPeak, stochastic } from './indicators'
 
 const fmt = (n: number | null) => (n == null ? '—' : n >= 100 ? n.toFixed(0) : n.toFixed(1))
 
@@ -302,6 +302,56 @@ const dipBuyer: Strategy = {
   },
 }
 
+const stochRevert: Strategy = {
+  id: 'stoch',
+  name: 'Stochastic Reversion',
+  blurb: 'Buy when the close is pinned to the bottom of its recent range; sell once it has worked its way back to the top.',
+  params: [
+    { key: 'lookback', label: 'Range window (days)', min: 5, max: 60, step: 1, default: 14 },
+    { key: 'smooth', label: 'Smoothing (days)', min: 1, max: 10, step: 1, default: 3 },
+    { key: 'buyBelow', label: 'Buy below', min: 5, max: 45, step: 1, default: 20 },
+    { key: 'sellAbove', label: 'Sell above', min: 50, max: 95, step: 1, default: 80 },
+  ],
+  contribution: 'lump',
+  init(bars, params) {
+    const { k, d } = stochastic(bars, params.lookback, params.smooth)
+    const warmup = k.findIndex((x) => x != null)
+    // hold from oversold until overbought — the band between them is a no-op
+    const signals: Signal[] = new Array(bars.length).fill('flat')
+    let inPos = false
+    for (let i = 0; i < bars.length; i++) {
+      const v = k[i]
+      if (v == null) continue
+      if (!inPos && v <= params.buyBelow) inPos = true
+      else if (inPos && v >= params.sellAbove) inPos = false
+      signals[i] = inPos ? 'long' : 'flat'
+    }
+    return {
+      warmup: warmup === -1 ? bars.length : warmup,
+      overlays: [],
+      strip: {
+        label: `Stochastic %K ${params.lookback} — buy under ${params.buyBelow}, sell over ${params.sellAbove}`,
+        series: [
+          { label: '%K', color: '#60a5fa', values: k },
+          { label: '%D', color: '#f59e0b', values: d },
+        ],
+        guides: [params.buyBelow, params.sellAbove],
+        range: { min: 0, max: 100 },
+      },
+      signalAt: (i) => signals[i],
+      explainAt: (i) => {
+        const v = k[i]
+        if (v == null) return `Warming up — need ${params.lookback} days of range first.`
+        return signals[i] === 'long'
+          ? `%K ${fmt(v)} — holding until it clears ${params.sellAbove}.`
+          : v <= params.buyBelow
+            ? `%K ${fmt(v)} — bottom of the range, buying.`
+            : `%K ${fmt(v)} — waiting for a drop under ${params.buyBelow}.`
+      },
+    }
+  },
+}
+
 export const STRATEGIES: Strategy[] = [
   maCross,
   buyHold,
@@ -312,6 +362,7 @@ export const STRATEGIES: Strategy[] = [
   bollingerRevert,
   momentum,
   dipBuyer,
+  stochRevert,
 ]
 
 export function getStrategy(id: string): Strategy {

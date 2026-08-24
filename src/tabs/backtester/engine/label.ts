@@ -36,6 +36,9 @@ export function autoLabel(
     case 'dip':
       base = `Dip ${params.buyDown}%`
       break
+    case 'stoch':
+      base = `Stoch${params.lookback} ${params.buyBelow}/${params.sellAbove}`
+      break
     case 'custom':
       base = 'JS'
       break
@@ -47,12 +50,15 @@ export function autoLabel(
   const d = DEFAULT_SETTINGS
   const tags: string[] = []
   if (s.stopPct > 0) tags.push(`SL${s.stopPct}`)
-  if (s.trailPct > 0) tags.push(`TS${s.trailPct}`)
+  if (s.trailMode === 'structure') {
+    if (s.trailLookback > 0) tags.push(`TS${s.trailLookback}L${s.trailAtrMult}A`)
+  } else if (s.trailPct > 0) tags.push(`TS${s.trailPct}`)
   if (s.tpPct > 0) tags.push(`TP${s.tpPct}`)
   if (s.maxBars > 0) tags.push(`T${s.maxBars}`)
   if (s.regimeMaDays > 0) tags.push(`R${s.regimeMaDays}`)
   if (s.sizingMode === 'fixed') tags.push(`F${s.fixedPct}`)
   if (s.sizingMode === 'vol') tags.push(`V${s.volTargetPct}`)
+  if (s.sizingMode === 'drawdown') tags.push(`D${s.ddBudgetPct}`)
   if (s.slippageBps !== d.slippageBps || s.feePerTrade !== d.feePerTrade)
     tags.push(`${s.slippageBps}bp${s.feePerTrade > 0 ? `+$${s.feePerTrade}` : ''}`)
 

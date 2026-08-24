@@ -44,6 +44,17 @@ Also shipped alongside: the gauntlet (one button runs the whole luck-test batter
 - **Heatmap color legend**: ramp is normalized to the grid's min/max with no scale shown — a dark cell might still beat B&H. Label the ramp ends with actual values.
 - **Engine tests in-repo**: the intrabar-fill/sizing/friction smoke tests live outside the repo; promote to vitest (`engine.test.ts`).
 
+### Shipped after the fact (2026-08-23, from an r/ai_trading thread)
+
+The post's own strategies were unbuildable here — 5-minute MNQ futures, both sides of the market, and scaling in and out of a position, against a long-only daily engine holding one lot. The machinery in the comments transferred cleanly:
+
+- **Structure trailing stop**: `stop = max(previous stop, rolling low(X) − mult × ATR)`, ratcheting, closed bars only — the trail that keeps a runner alive instead of choking it at a fixed %. Mode toggle next to the % trail; only one is ever live.
+- **Exit-quality metrics** on the trade card: MFE captured, average given back from the peak, average R (needs the entry risk, now recorded per trade), and the premature-exit rate — a protective exit that fired while the strategy still wanted in, followed by a close a full R back above it inside 20 bars. Any close above the exit was the first cut and it read 60–100% everywhere; 1R is the threshold that discriminates.
+- **Drawdown-scaled sizing**: entries shrink with the equity drawdown and stand down entirely at the budget. The transferable half of the thread's "risk governor" — the rest of it (prop-account trailing drawdown, force-flat, post-payout lockout) is prop-firm furniture.
+- **Stochastic reversion strategy** — the oscillator, not the martingale scale-in that was actually doing the work in the original.
+
+Still blocked, in order of cost: shorts (`Signal` is long/flat and it's load-bearing), scaling in/out (one scalar share count, one entry price — needs a lot model, which also touches the trade log and the Monte Carlo resample), intraday data.
+
 ## Lab backlog
 
 - **Sweepable engine knobs**: the heatmap only sweeps strategy params — stop %, trailing %, and regime MA have never had a plateau test (the BTC 7% stop is a hand-tuned local peak: ~$50M/$70M/$50M at 6/7/8%, i.e. ±3% CAGR — a gentle ridge, but formalize it). Let the sweep axis picker offer engine settings alongside strategy params.

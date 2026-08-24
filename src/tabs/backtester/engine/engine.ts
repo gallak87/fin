@@ -1,5 +1,5 @@
 import type { Bar, BacktestResult, EngineSettings, ExitReason, Metrics, Signal, Strategy, Trade } from './types'
-import { sma, atr } from './indicators'
+import { sma, atr, donchian } from './indicators'
 
 export const DEFAULT_SETTINGS: EngineSettings = {
   slippageBps: 5,
@@ -7,8 +7,13 @@ export const DEFAULT_SETTINGS: EngineSettings = {
   sizingMode: 'all',
   fixedPct: 50,
   volTargetPct: 15,
+  ddBudgetPct: 20,
   stopPct: 0,
+  trailMode: 'pct',
   trailPct: 0,
+  trailLookback: 20,
+  trailAtrDays: 14,
+  trailAtrMult: 2,
   tpPct: 0,
   maxBars: 0,
   regimeMaDays: 0,
@@ -21,6 +26,11 @@ export const DEFAULT_SETTINGS: EngineSettings = {
  * the level — unless the bar gapped past it at the open, in which case you
  * get the open. After a protective exit the strategy must go flat and signal
  * long again (a fresh edge) before re-entering.
+ *
+ * The trailing stop comes in two shapes: a fixed % under the running peak, or
+ * a structure stop hung under the recent lows with a volatility buffer. Both
+ * ratchet — a stop only ever moves in the trade's favour — and both read only
+ * CLOSED bars, so today's range can't move today's stop.
  */
 export function runBacktest(
   bars: Bar[],
@@ -42,10 +52,36 @@ export function runBacktest(
   const wantsLong = (i: number): boolean =>
     run.signalAt(i) === 'long' && (!gate || (gate[i] != null && bars[i].c > gate[i]!))
 
+  // structure trail: recent lows minus a volatility buffer, both read off closed bars
+  const useStructTrail = settings.trailMode === 'structure' && settings.trailLookback > 0
+  const structLow = useStructTrail
+    ? donchian(bars.map((b) => b.h), bars.map((b) => b.l), settings.trailLookback).lower
+    : null
+  const trailAtr = useStructTrail ? atr(bars, settings.trailAtrDays) : null
+  /** structure stop level implied by the bars up to and including `j`; null while warming up */
+  const structLevel = (j: number): number | null => {
+    if (!structLow || !trailAtr || j < 0) return null
+    const lo = structLow[j]
+    const a = trailAtr[j]
+    return lo != null && a != null ? lo - settings.trailAtrMult * a : null
+  }
+
   // ATR-based vol targeting: fraction = target vol / recent instrument vol
   const atr14 = settings.sizingMode === 'vol' ? atr(bars, 14) : null
+  // running high-water mark of equity, for drawdown-scaled sizing
+  let peakEquity = 0
   const entryFraction = (i: number): number => {
     if (settings.sizingMode === 'fixed') return settings.fixedPct / 100
+    if (settings.sizingMode === 'drawdown') {
+      // size shrinks with the equity drawdown, hitting zero at the full budget
+      const budget = settings.ddBudgetPct / 100
+      const eq = i > 0 ? equity[i - 1] : capital
+      if (budget <= 0 || peakEquity <= 0 || eq <= 0) return 1
+      const dd = Math.max(0, 1 - eq / peakEquity)
+      const f = 1 - dd / budget
+      // a drawdown within rounding of the budget has spent it — stand down
+      return f <= 1e-9 ? 0 : Math.min(1, f)
+    }
     if (settings.sizingMode === 'vol') {
       const j = Math.max(i - 1, 0) // yesterday's ATR — no peeking at today's range
       const a = atr14![j]
@@ -84,6 +120,9 @@ export function runBacktest(
   // highest high since entry through the PREVIOUS bar (today's high may come
   // after today's low, so it can't move today's trailing stop)
   let peakHigh = 0
+  // structure trail: the ratchet — only ever raised, never lowered, and only
+  // from closed bars. -Infinity while the trade has no structure stop yet.
+  let trailStop = -Infinity
 
   const sellAll = (i: number, price: number, reason: ExitReason) => {
     cash += shares * price - fee
@@ -129,6 +168,14 @@ export function runBacktest(
         shares = bought
         cash -= spend
         peakHigh = fill
+        // yesterday's bars already imply a structure stop — live from bar one
+        trailStop = useStructTrail ? (structLevel(i - 1) ?? -Infinity) : -Infinity
+        // initial risk = entry to whichever protective stop sits highest
+        const initStop = Math.max(
+          settings.stopPct > 0 ? fill * (1 - settings.stopPct / 100) : -Infinity,
+          useStructTrail ? trailStop : settings.trailPct > 0 ? fill * (1 - settings.trailPct / 100) : -Infinity,
+        )
+        if (initStop > -Infinity && initStop < fill) open.riskPct = 1 - initStop / fill
       }
     } else if (want && shares > 0 && cash > fee && strategy.contribution === 'monthly' && open) {
       // DCA top-up into an open position — always all-in
@@ -144,7 +191,13 @@ export function runBacktest(
     if (shares > 0 && open) {
       const b = bars[i]
       const stopLvl = settings.stopPct > 0 ? open.entryPrice * (1 - settings.stopPct / 100) : null
-      const trailLvl = settings.trailPct > 0 ? peakHigh * (1 - settings.trailPct / 100) : null
+      const trailLvl = useStructTrail
+        ? trailStop > -Infinity
+          ? trailStop
+          : null
+        : settings.trailPct > 0
+          ? peakHigh * (1 - settings.trailPct / 100)
+          : null
       const eff = Math.max(stopLvl ?? -Infinity, trailLvl ?? -Infinity)
       const stopReason: ExitReason = trailLvl != null && (stopLvl == null || trailLvl > stopLvl) ? 'trail' : 'stop'
       const tpLvl = settings.tpPct > 0 ? open.entryPrice * (1 + settings.tpPct / 100) : null
@@ -166,13 +219,18 @@ export function runBacktest(
     // still holding: extend excursions and tomorrow's trailing peak
     if (shares > 0 && open) {
       peakHigh = Math.max(peakHigh, bars[i].h)
+      // today is closed now, so it can move tomorrow's stop — upward only
+      if (useStructTrail) trailStop = Math.max(trailStop, structLevel(i) ?? -Infinity)
       open.maePct = Math.min(open.maePct ?? 0, bars[i].l / open.entryPrice - 1)
       open.mfePct = Math.max(open.mfePct ?? 0, bars[i].h / open.entryPrice - 1)
     }
 
     position[i] = shares > 0 ? 'long' : 'flat'
     equity[i] = cash + shares * bars[i].c
+    peakEquity = Math.max(peakEquity, equity[i])
   }
+
+  markBailedEarly(trades, bars, wantsLong, warmup)
 
   // benchmark: lump buy-and-hold entered at the strategy's first tradeable open
   const benchStart = Math.min(warmup + 1, n - 1)
@@ -207,6 +265,41 @@ export function runBacktest(
       ...(gate ? [{ label: `Regime MA ${settings.regimeMaDays}`, color: '#f472b6', values: gate }] : []),
     ],
     gate,
+  }
+}
+
+/** How far past an exit we look to see whether the trade was still alive. */
+const BAIL_LOOKAHEAD = 20
+
+/**
+ * Flag the exits that cost you: a protective stop fired while the strategy
+ * still wanted to be long, and within `BAIL_LOOKAHEAD` bars price closed a
+ * full unit of the trade's own risk back above where you got out. Any close
+ * above the exit is far too low a bar — on a trending asset that's almost
+ * every stop. Pure post-hoc analysis; it never touches a fill.
+ */
+function markBailedEarly(
+  trades: Trade[],
+  bars: Bar[],
+  wantsLong: (i: number) => boolean,
+  warmup: number,
+): void {
+  for (const t of trades) {
+    if (t.exitIdx == null || t.exitPrice == null) continue
+    if (t.exitReason !== 'stop' && t.exitReason !== 'trail' && t.exitReason !== 'time') continue
+    // no risk basis (stopped out during warm-up) → no opinion on the exit
+    if (!t.riskPct || t.riskPct <= 0) continue
+    const signalIdx = t.exitIdx - 1
+    if (signalIdx < warmup || !wantsLong(signalIdx)) continue
+    const recovered = t.exitPrice * (1 + t.riskPct)
+    const last = Math.min(t.exitIdx + BAIL_LOOKAHEAD, bars.length - 1)
+    t.bailedEarly = false
+    for (let j = t.exitIdx + 1; j <= last; j++) {
+      if (bars[j].c >= recovered) {
+        t.bailedEarly = true
+        break
+      }
+    }
   }
 }
 

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import type { EngineSettings, SizingMode } from '../engine/types'
+import type { EngineSettings, SizingMode, TrailMode } from '../engine/types'
 import { useBacktestStore } from '../store'
 
 interface SliderDef {
@@ -13,11 +13,24 @@ interface SliderDef {
   unit?: string
 }
 
-const EXITS: SliderDef[] = [
-  { key: 'stopPct', label: 'Stop-loss below entry', min: 0, max: 50, step: 1, off: 'Off', unit: '%' },
-  { key: 'trailPct', label: 'Trailing stop below peak', min: 0, max: 50, step: 1, off: 'Off', unit: '%' },
+const STOP: SliderDef = { key: 'stopPct', label: 'Stop-loss below entry', min: 0, max: 50, step: 1, off: 'Off', unit: '%' }
+
+const EXITS_AFTER_TRAIL: SliderDef[] = [
   { key: 'tpPct', label: 'Take-profit above entry', min: 0, max: 200, step: 5, off: 'Off', unit: '%' },
   { key: 'maxBars', label: 'Time exit after', min: 0, max: 250, step: 5, off: 'Off', unit: ' bars' },
+]
+
+const TRAIL_PCT: SliderDef = { key: 'trailPct', label: 'Below the peak', min: 0, max: 50, step: 1, off: 'Off', unit: '%' }
+
+const TRAIL_STRUCT: SliderDef[] = [
+  { key: 'trailLookback', label: 'Lookback', min: 0, max: 120, step: 5, off: 'Off', unit: ' bars' },
+  { key: 'trailAtrDays', label: 'Volatility window', min: 5, max: 30, step: 1, unit: ' bars' },
+  { key: 'trailAtrMult', label: 'Buffer', min: 0.5, max: 4, step: 0.5, unit: '×' },
+]
+
+const TRAIL_MODES: { id: TrailMode; label: string }[] = [
+  { id: 'pct', label: '%' },
+  { id: 'structure', label: 'Recent low' },
 ]
 
 const FRICTION: SliderDef[] = [
@@ -29,6 +42,7 @@ const SIZING_MODES: { id: SizingMode; label: string }[] = [
   { id: 'all', label: 'All-in' },
   { id: 'fixed', label: 'Fixed %' },
   { id: 'vol', label: 'Vol target' },
+  { id: 'drawdown', label: 'Drawdown' },
 ]
 
 function Slider({ def }: { def: SliderDef }) {
@@ -55,6 +69,41 @@ function Slider({ def }: { def: SliderDef }) {
         onChange={(e) => setSetting(def.key, Number(e.target.value) as never)}
         className="w-full accent-blue-500"
       />
+    </div>
+  )
+}
+
+/** One trail, two shapes — the toggle swaps which knobs are live. */
+function TrailBlock() {
+  const mode = useBacktestStore((s) => s.settings.trailMode)
+  const setSetting = useBacktestStore((s) => s.setSetting)
+  return (
+    <div className="space-y-1.5">
+      <div className="flex items-center justify-between">
+        <span className="text-sm text-gray-300">Trailing stop</span>
+        <div className="flex gap-1">
+          {TRAIL_MODES.map((m) => (
+            <button
+              key={m.id}
+              onClick={() => setSetting('trailMode', m.id)}
+              className={`rounded-md border px-2 py-0.5 text-[11px] ${
+                mode === m.id
+                  ? 'border-blue-500 bg-blue-500/10 text-gray-100'
+                  : 'border-gray-800 text-gray-400 hover:border-gray-600'
+              }`}
+            >
+              {m.label}
+            </button>
+          ))}
+        </div>
+      </div>
+      <div className="pl-3 border-l border-gray-800 space-y-1.5">
+        {mode === 'pct' ? (
+          <Slider def={TRAIL_PCT} />
+        ) : (
+          TRAIL_STRUCT.map((d) => <Slider key={d.key} def={d} />)
+        )}
+      </div>
     </div>
   )
 }
@@ -106,9 +155,13 @@ export function EngineSettingsPanel() {
   const settings = useBacktestStore((s) => s.settings)
   const setSetting = useBacktestStore((s) => s.setSetting)
 
+  const trailTag =
+    settings.trailMode === 'structure'
+      ? settings.trailLookback > 0 && `trail ${settings.trailLookback}d·${settings.trailAtrMult}×`
+      : settings.trailPct > 0 && `trail ${settings.trailPct}%`
   const exitTags = [
     settings.stopPct > 0 && `stop ${settings.stopPct}%`,
-    settings.trailPct > 0 && `trail ${settings.trailPct}%`,
+    trailTag,
     settings.tpPct > 0 && `tp ${settings.tpPct}%`,
     settings.maxBars > 0 && `${settings.maxBars} bars`,
   ].filter(Boolean) as string[]
@@ -117,7 +170,9 @@ export function EngineSettingsPanel() {
       ? `fixed ${settings.fixedPct}%`
       : settings.sizingMode === 'vol'
         ? `vol ${settings.volTargetPct}%`
-        : 'all-in'
+        : settings.sizingMode === 'drawdown'
+          ? `dd ${settings.ddBudgetPct}%`
+          : 'all-in'
   const frictionSummary = `${settings.slippageBps}bps${settings.feePerTrade > 0 ? ` · $${settings.feePerTrade}` : ''}`
 
   return (
@@ -126,15 +181,22 @@ export function EngineSettingsPanel() {
         title="Exits"
         summary={exitTags.length ? exitTags.join(' · ') : 'off'}
         isDefault={exitTags.length === 0}
-        hint="Stops fill intrabar at the level — or at the open if the bar gaps past it."
+        hint="Stops fill intrabar at the level — or at the open if the bar gaps past it. The trail only ever moves in your favour, and only off closed bars."
       >
-        {EXITS.map((d) => (
+        <Slider def={STOP} />
+        <TrailBlock />
+        {EXITS_AFTER_TRAIL.map((d) => (
           <Slider key={d.key} def={d} />
         ))}
       </Section>
 
-      <Section title="Position sizing" summary={sizingSummary} isDefault={settings.sizingMode === 'all'}>
-        <div className="grid grid-cols-3 gap-1.5">
+      <Section
+        title="Position sizing"
+        summary={sizingSummary}
+        isDefault={settings.sizingMode === 'all'}
+        hint="Drawdown mode shrinks each entry as equity falls from its high-water mark, and stands down entirely at the full budget."
+      >
+        <div className="grid grid-cols-2 gap-1.5">
           {SIZING_MODES.map((m) => (
             <button
               key={m.id}
@@ -155,6 +217,11 @@ export function EngineSettingsPanel() {
         {settings.sizingMode === 'vol' && (
           <Slider
             def={{ key: 'volTargetPct', label: 'Annualized vol target', min: 5, max: 40, step: 1, unit: '%' }}
+          />
+        )}
+        {settings.sizingMode === 'drawdown' && (
+          <Slider
+            def={{ key: 'ddBudgetPct', label: 'Flat by drawdown of', min: 5, max: 50, step: 5, unit: '%' }}
           />
         )}
       </Section>
