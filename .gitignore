@@ -24,3 +24,6 @@ dist-ssr
 *.sw?
 *.bloom
 !src/tabs/keys/data/funded.bloom
+
+# personal figures for the private planner tab (?local=1) — never commit
+*.local.ts

@@ -3,17 +3,24 @@ import RentVsBuyPage from './tabs/rent-vs-buy/RentVsBuyPage'
 
 const BacktesterPage = lazy(() => import('./tabs/backtester/BacktesterPage'))
 const KeysPage = lazy(() => import('./tabs/keys/KeysPage'))
+const PlanPage = lazy(() => import('./tabs/plan/PlanPage'))
 
-type Tab = 'rent-vs-buy' | 'backtester' | 'keys'
+type Tab = 'rent-vs-buy' | 'backtester' | 'keys' | 'plan'
+
+// The house planner runs on private figures — it only exists with ?local=1 in the
+// URL, so sharing the plain app link never surfaces it.
+const LOCAL = new URLSearchParams(window.location.search).has('local')
 
 const TABS: { id: Tab; label: string }[] = [
   { id: 'keys', label: 'BTC Roulette' },
   { id: 'backtester', label: 'Backtester' },
   { id: 'rent-vs-buy', label: 'Rent vs Buy' },
+  ...(LOCAL ? [{ id: 'plan' as const, label: 'House Plan' }] : []),
 ]
 
 function initialTab(): Tab {
   const saved = localStorage.getItem('fin-tab')
+  if (saved === 'plan') return LOCAL ? 'plan' : 'keys'
   return saved === 'rent-vs-buy' || saved === 'backtester' ? saved : 'keys'
 }
 
@@ -61,7 +68,13 @@ export default function App() {
         <RentVsBuyPage drawerOpen={drawerOpen} />
       ) : (
         <Suspense fallback={<div className="p-6 text-gray-500 text-sm">Loading…</div>}>
-          {tab === 'keys' ? <KeysPage /> : <BacktesterPage drawerOpen={drawerOpen} />}
+          {tab === 'keys' ? (
+            <KeysPage />
+          ) : tab === 'plan' ? (
+            <PlanPage drawerOpen={drawerOpen} />
+          ) : (
+            <BacktesterPage drawerOpen={drawerOpen} />
+          )}
         </Suspense>
       )}
     </div>
